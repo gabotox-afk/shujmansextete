@@ -66,25 +66,21 @@ export default function Landing() {
           Gym<span>Tracker</span>
         </div>
         <div className="nav-actions">
-          <Link to="/login" className="btn btn-outline">Iniciar sesión</Link>
-          <Link to="/register" className="btn btn-primary">Empezar gratis</Link>
+          {/* Main CTA kept minimal in Nav as requested, or just login */}
+          <Link to="/login" className="btn btn-outline-nav">Iniciar sesión</Link>
         </div>
       </nav>
 
       {/* HERO */}
       <section className="hero">
-        <div className="hero-grid" />
-        <div className="container">
+        <div className="hero-bg-image"></div>
+        <div className="hero-overlay"></div>
+        
+        <div className="container hero-container">
           <div className="hero-inner">
-            <div className="hero-badge">
-              <span className="hero-badge-dot" />
-              Lanzamiento · 100% gratuito
-            </div>
-
             <h1 className="hero-title">
-              Tu gym, tu reglas,<br />
-              tu <span className="highlight">progreso</span> al{' '}
-              <span className="highlight-accent">máximo</span>
+              TU GYM, TUS REGLAS,<br />
+              TU <span className="highlight-gold">PROGRESO</span> AL MÁXIMO
             </h1>
 
             <p className="hero-subtitle">
@@ -93,29 +89,12 @@ export default function Landing() {
             </p>
 
             <div className="hero-actions">
-              <Link to="/register" className="btn btn-primary btn-lg" id="hero-cta-register">
-                🚀 Empezar ahora
+              <Link to="/register" className="btn btn-gold btn-lg" id="hero-cta-register">
+                EMPEZAR
               </Link>
-              <Link to="/login" className="btn btn-outline btn-lg" id="hero-cta-login">
-                Iniciar sesión
+              <Link to="/login" className="btn btn-outline-gold btn-lg" id="hero-cta-login">
+                INICIAR SESIÓN
               </Link>
-            </div>
-
-            <div className="hero-stats">
-              <div>
-                <div className="hero-stat-value">100%</div>
-                <div className="hero-stat-label">Gratuito</div>
-              </div>
-              <div className="hero-stat-divider" />
-              <div>
-                <div className="hero-stat-value">∞</div>
-                <div className="hero-stat-label">Ejercicios</div>
-              </div>
-              <div className="hero-stat-divider" />
-              <div>
-                <div className="hero-stat-value">0</div>
-                <div className="hero-stat-label">Excusas</div>
-              </div>
             </div>
           </div>
         </div>
@@ -124,8 +103,8 @@ export default function Landing() {
       {/* FEATURES */}
       <section className="features" id="features">
         <div className="container">
-          <p className="section-label">Funcionalidades</p>
-          <h2 className="section-title">Todo lo que necesitás<br />para entrenar mejor</h2>
+          <h2 className="section-title">TODO LO QUE NECESITÁS PARA ENTRENAR MEJOR</h2>
+          <div className="title-divider"></div>
           <p className="section-sub">
             Sin complicaciones, sin pagas ocultas. Solo las herramientas que
             realmente necesitás para mejorar cada día.
@@ -146,8 +125,8 @@ export default function Landing() {
       {/* HOW IT WORKS */}
       <section className="how" id="how">
         <div className="container">
-          <p className="section-label">Cómo funciona</p>
-          <h2 className="section-title">Simple de arrancar,<br />poderoso para crecer</h2>
+          <h2 className="section-title">SIMPLE DE ARRANCAR, PODEROSO PARA CRECER</h2>
+          <div className="title-divider"></div>
           <p className="section-sub" style={{ marginBottom: '60px' }}>
             En 4 pasos estás entrenando de manera inteligente.
           </p>
@@ -156,34 +135,19 @@ export default function Landing() {
             {steps.map((s) => (
               <div className="how-step" key={s.num}>
                 <div className="step-num">{s.num}</div>
-                <h3 className="step-title">{s.title}</h3>
-                <p className="step-desc">{s.desc}</p>
+                <div className="step-content">
+                  <h3 className="step-title">{s.title}</h3>
+                  <p className="step-desc">{s.desc}</p>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="cta">
-        <div className="container">
-          <div className="cta-box">
-            <h2 className="cta-title">
-              ¿Listo para <span style={{ color: 'var(--clr-primary)' }}>transformarte</span>?
-            </h2>
-            <p className="cta-sub">
-              Unete hoy. Es gratis, siempre.
-            </p>
-            <Link to="/register" className="btn btn-primary btn-lg" id="footer-cta">
-              Crear cuenta gratis 🔥
-            </Link>
-          </div>
-        </div>
-      </section>
-
       {/* FOOTER */}
       <footer className="footer">
-        <p>© 2026 <strong>GymTracker</strong>. Hecho con 💪 para los que no se rinden.</p>
+        <p>© 2026 <strong>GymTracker</strong>. Hecho con disciplina para los que no se rinden.</p>
       </footer>
     </>
   )
