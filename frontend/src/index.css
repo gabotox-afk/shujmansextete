@@ -449,7 +449,7 @@ input {
 .auth-left::before {
   content: '';
   position: absolute;
-  inset: 0;
+  inset: -2;
   background: linear-gradient(135deg, rgba(10, 10, 10, 0.9) 0%, rgba(10, 10, 10, 0.7) 100%);
   z-index: 1;
 }
