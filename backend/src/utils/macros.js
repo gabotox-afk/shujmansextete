@@ -1,6 +1,10 @@
 // Estimación de calorías y macros a partir de los datos del onboarding.
 // TMB con la fórmula de Mifflin-St Jeor + factor de actividad + ajuste por objetivo.
-export const calcularMacros = ({ peso, altura, edad, sexo, actividadFisica, objetivo }) => {
+export const calcularMacros = (usuario) => {
+  if (!usuario) return null
+
+  const { peso, altura, edad, sexo, actividadFisica, objetivo } = usuario
+
   const tmb = sexo === 'M'
     ? 10 * peso + 6.25 * altura - 5 * edad + 5
     : 10 * peso + 6.25 * altura - 5 * edad - 161

@@ -24,4 +24,61 @@ model Usuario {
   sexo               String?
   actividadFisica    Int?
   objetivo           String?
+
+  alimentos Alimento[]
+  comidas   Comida[]
+}
+
+// Catálogo de alimentos: macros por cada 100g.
+// usuarioId == null  -> alimento del catálogo global (precargado)
+// usuarioId != null  -> alimento personalizado, creado por ese usuario
+model Alimento {
+  id                   Int      @id @default(autoincrement())
+  nombre               String
+  kcalPor100g          Float
+  proteinasPor100g     Float
+  grasasPor100g        Float
+  carbohidratosPor100g Float
+  usuarioId            Int?
+  usuario              Usuario? @relation(fields: [usuarioId], references: [id])
+  items                ItemComida[]
+  createdAt            DateTime @default(now())
+
+  @@index([usuarioId])
+}
+
+// Una comida cargada por el usuario (desayuno, almuerzo, merienda, cena, snack),
+// compuesta por uno o varios alimentos cargados "en lote". Las macros totales
+// se obtienen sumando las de cada item.
+model Comida {
+  id        Int      @id @default(autoincrement())
+  usuarioId Int
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
+  tipo      String   // desayuno | almuerzo | merienda | cena | snack
+  nombre    String?  // nombre opcional para identificarla (ej: "Pollo con arroz")
+  fecha     DateTime @default(now())
+  createdAt DateTime @default(now())
+  items     ItemComida[]
+
+  @@index([usuarioId, fecha])
+}
+
+// Un alimento puntual dentro de una comida. Los macros se calculan y guardan
+// "congelados" al momento de cargar (gramos * macro-por-100g / 100), así si
+// el alimento de catálogo cambia más adelante, el historial no se altera.
+model ItemComida {
+  id            Int       @id @default(autoincrement())
+  comidaId      Int
+  comida        Comida    @relation(fields: [comidaId], references: [id], onDelete: Cascade)
+  alimentoId    Int?
+  alimento      Alimento? @relation(fields: [alimentoId], references: [id])
+  nombre        String
+  gramos        Float
+  kcal          Float
+  proteinas     Float
+  grasas        Float
+  carbohidratos Float
+  createdAt     DateTime  @default(now())
+
+  @@index([comidaId])
 }
