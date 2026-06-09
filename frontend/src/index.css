@@ -681,7 +681,7 @@ input {
 }
 
 .sidebar {
-  width: 272px;
+  width: 240px;
   flex-shrink: 0;
   background: var(--clr-bg-2);
   border-right: 1px solid var(--clr-border);
@@ -692,20 +692,114 @@ input {
   bottom: 0;
   left: 0;
   z-index: 200;
-  transition: transform var(--duration) var(--ease);
+  transition: width var(--duration) var(--ease), transform var(--duration) var(--ease);
+  overflow: hidden;
+}
+
+/* Modo colapsado: sólo muestra los íconos */
+.sidebar.collapsed {
+  width: 64px;
+}
+
+.sidebar.collapsed .sidebar-brand-text,
+.sidebar.collapsed .sidebar-id-info,
+.sidebar.collapsed .sidebar-section-label,
+.sidebar.collapsed .sidebar-link-label {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.sidebar.collapsed .sidebar-id {
+  justify-content: center;
+  padding: 16px 0;
+}
+
+.sidebar.collapsed .sidebar-link {
+  justify-content: center;
+  padding: 13px 0;
+}
+
+.sidebar.collapsed .sidebar-logout {
+  justify-content: center;
+  padding: 13px 0;
+}
+
+.sidebar-collapse-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 22px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--clr-border);
+  color: var(--clr-text-faint);
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--duration) var(--ease);
+  flex-shrink: 0;
+}
+
+.sidebar-collapse-btn:hover {
+  color: var(--clr-primary);
+  background: var(--clr-surface);
+}
+
+.sidebar-collapse-btn svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.sidebar.collapsed .sidebar-brand {
+  justify-content: center;
+  padding: 22px 0;
+}
+
+/* Cuando está colapsado: centramos el ícono del botón */
+.sidebar.collapsed .sidebar-collapse-btn {
+  justify-content: center;
+  padding: 11px 0;
 }
 
 .sidebar-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 30px 28px;
+  gap: 10px;
+  padding: 24px 20px;
   font-family: var(--font-heading);
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   letter-spacing: 2px;
   text-transform: uppercase;
   color: #fff;
   border-bottom: 1px solid var(--clr-border);
+}
+
+.sidebar-brand-logo {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--clr-primary-dim);
+  border: 1px solid var(--clr-primary);
+  color: var(--clr-primary);
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+}
+
+.sidebar-brand-text {
+  transition: opacity var(--duration) var(--ease), width var(--duration) var(--ease);
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .sidebar-brand span {
@@ -799,17 +893,24 @@ input {
 }
 
 .sidebar-link-icon {
-  font-size: 1.05rem;
+  flex-shrink: 0;
   width: 22px;
-  text-align: center;
-  filter: grayscale(100%);
-  opacity: 0.65;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.55;
   transition: all var(--duration) var(--ease);
+}
+
+.sidebar-link-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
 }
 
 .sidebar-link.active .sidebar-link-icon,
 .sidebar-link:hover .sidebar-link-icon {
-  filter: none;
   opacity: 1;
 }
 
@@ -851,10 +952,15 @@ input {
 
 .dash-main {
   flex: 1;
-  margin-left: 272px;
-  padding: 64px 72px 96px;
+  margin-left: 240px;
+  padding: 48px 56px 80px;
   max-width: 1320px;
   width: 100%;
+  transition: margin-left var(--duration) var(--ease);
+}
+
+.sidebar-collapsed .dash-main {
+  margin-left: 64px;
 }
 
 .dash-eyebrow {
@@ -1023,8 +1129,13 @@ input {
 }
 
 @keyframes macro-grow {
-  from { transform: scaleX(0); }
-  to   { transform: scaleX(1); }
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
 }
 
 .macro-amount {
@@ -1233,8 +1344,13 @@ input {
 }
 
 @keyframes intake-fill {
-  from { transform: scaleX(0); }
-  to   { transform: scaleX(1); }
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
 }
 
 .intake-step-label {
