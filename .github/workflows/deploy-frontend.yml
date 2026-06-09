@@ -1,0 +1,117 @@
+name: Desplegar Aplicación (Frontend y Backend)
+
+# El robot se activará cuando haya un 'push' en la rama 'main'
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  # TRABAJO 1: Despliegue del Frontend
+  deploy-frontend:
+    name: Desplegar Frontend
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Clonar el código del repositorio
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      # 2. Instalar Node.js
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 3. Instalar dependencias del frontend
+      - name: Instalar dependencias
+        run: |
+          cd frontend
+          npm ci
+
+      # 4. Compilar el frontend (genera la carpeta dist)
+      - name: Compilar la app
+        run: |
+          cd frontend
+          npm run build
+
+      # 5. Guardar la compilación como artefacto temporal
+      - name: Subir artefacto de la compilación
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-compilada
+          path: frontend/dist
+
+      # 6. Descargar el artefacto
+      - name: Descargar artefacto compilado
+        uses: actions/download-artifact@v4
+        with:
+          name: app-compilada
+          path: build-temp
+
+      # 7. Copiar archivos del frontend al servidor
+      - name: Copiar archivos al servidor
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: 22002
+          source: "build-temp/"
+          target: "/var/www/html/" # Cambiar por la ruta real de tu frontend en el servidor
+
+      # 8. Reiniciar el servidor web Nginx
+      - name: Reiniciar servidor web
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: 22002
+          script: |
+            sudo systemctl restart nginx
+            echo "Frontend desplegado con éxito"
+
+  # TRABAJO 2: Despliegue del Backend
+  deploy-backend:
+    name: Desplegar Backend
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Clonar el código del repositorio
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      # 2. Instalar Node.js (necesario para verificar la versión si se requiriera)
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 3. Copiar la carpeta backend al servidor (excluyendo node_modules que no están en Git)
+      - name: Copiar backend al servidor
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: 22002
+          source: "backend/"
+          target: "/var/www/gym-tracker" # Cambiar por la ruta real de tu proyecto en el servidor
+
+      # 4. Instalar dependencias de producción, generar Prisma y reiniciar el proceso
+      - name: Ejecutar comandos de despliegue en el servidor
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: 22002
+          script: |
+            cd /var/www/gym-tracker/backend
+            # Instalar dependencias limpias de producción (ignora devDependencies como nodemon)
+            npm ci --omit=dev
+            # Generar el cliente de Prisma
+            npx prisma generate
+            # Aplicar las migraciones de Prisma pendientes en la base de datos de producción
+            npx prisma migrate deploy
+            # Reiniciar la app en PM2 (o iniciarla si es la primera vez)
+            pm2 restart gym-backend || pm2 start server.js --name "gym-backend"
+            echo "Backend desplegado con éxito"
