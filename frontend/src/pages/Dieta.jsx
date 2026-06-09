@@ -61,7 +61,7 @@ export default function Dieta() {
         <div className="scoreboard-cell">
           <div className="scoreboard-label">Racha de macros cumplidos</div>
           <div className="scoreboard-value gold">
-            {cargando ? '—' : resumen?.racha ?? 0}<span className="unit">días 🔥</span>
+            {cargando ? '—' : resumen?.racha ?? 0}<span className="unit">días</span>
           </div>
         </div>
         <div className="scoreboard-cell">
@@ -94,9 +94,9 @@ export default function Dieta() {
 /* ── PROGRESO DEL DÍA ──────────────────────────── */
 function ProgresoDelDia({ resumen, objetivo, cargando }) {
   const filas = [
-    { nombre: 'Calorías',      icon: '🔥', color: 'var(--clr-primary)', valor: resumen?.totales.kcal ?? 0,          objetivo: objetivo.calorias,     unidad: 'kcal' },
-    { nombre: 'Proteínas',     icon: '🥩', color: 'var(--clr-primary)', valor: resumen?.totales.proteinas ?? 0,     objetivo: objetivo.proteinas,    unidad: 'g' },
-    { nombre: 'Grasas',        icon: '🥑', color: '#e8c468',            valor: resumen?.totales.grasas ?? 0,        objetivo: objetivo.grasas,       unidad: 'g' },
+    { nombre: 'Calorías',      icon: '🔥', color: 'var(--clr-primary)', valor: resumen?.totales.kcal ?? 0,          objetivo: objetivo.calorias,      unidad: 'kcal' },
+    { nombre: 'Proteínas',     icon: '🥩', color: 'var(--clr-primary)', valor: resumen?.totales.proteinas ?? 0,     objetivo: objetivo.proteinas,     unidad: 'g' },
+    { nombre: 'Grasas',        icon: '🥑', color: '#e8c468',            valor: resumen?.totales.grasas ?? 0,        objetivo: objetivo.grasas,        unidad: 'g' },
     { nombre: 'Carbohidratos', icon: '🍞', color: '#a0a0a0',            valor: resumen?.totales.carbohidratos ?? 0, objetivo: objetivo.carbohidratos, unidad: 'g' },
   ]
 
@@ -532,8 +532,8 @@ function AgregarAlimento({ onAgregar }) {
           <p className="panel-note" style={{ marginBottom: 12 }}>Macros por cada 100 g de este alimento</p>
           <div className="intake-grid cols-2">
             <CampoManual label="Calorías (kcal)" valor={manual.kcalPor100g} onChange={(v) => setManual(m => ({ ...m, kcalPor100g: v }))} icon="🔥" />
-            <CampoManual label="Proteínas (g)"   valor={manual.proteinasPor100g} onChange={(v) => setManual(m => ({ ...m, proteinasPor100g: v }))} icon="🥩" />
-            <CampoManual label="Grasas (g)"      valor={manual.grasasPor100g} onChange={(v) => setManual(m => ({ ...m, grasasPor100g: v }))} icon="🥑" />
+            <CampoManual label="Proteínas (g)" valor={manual.proteinasPor100g} onChange={(v) => setManual(m => ({ ...m, proteinasPor100g: v }))} icon="🥩" />
+            <CampoManual label="Grasas (g)" valor={manual.grasasPor100g} onChange={(v) => setManual(m => ({ ...m, grasasPor100g: v }))} icon="🥑" />
             <CampoManual label="Carbohidratos (g)" valor={manual.carbohidratosPor100g} onChange={(v) => setManual(m => ({ ...m, carbohidratosPor100g: v }))} icon="🍞" />
           </div>
           <p className="panel-note" style={{ marginTop: 14 }}>
@@ -684,9 +684,9 @@ function DistribucionDeMacros({ usuario, macros }) {
   const kcalCarbs = macros.carbohidratos * 4
 
   const filas = [
-    { nombre: 'Proteínas',     color: 'var(--clr-primary)', gramos: macros.proteinas,    kcal: kcalProteinas, regla: '2 g por kg de peso corporal' },
-    { nombre: 'Grasas',        color: '#e8c468',            gramos: macros.grasas,       kcal: kcalGrasas,    regla: '1 g por kg de peso corporal' },
-    { nombre: 'Carbohidratos', color: '#a0a0a0',            gramos: macros.carbohidratos, kcal: kcalCarbs,    regla: 'el resto de las calorías totales' },
+    { nombre: 'Proteínas', color: 'var(--clr-primary)', gramos: macros.proteinas, kcal: kcalProteinas, regla: '2 g por kg de peso corporal' },
+    { nombre: 'Grasas', color: '#e8c468', gramos: macros.grasas, kcal: kcalGrasas, regla: '1 g por kg de peso corporal' },
+    { nombre: 'Carbohidratos', color: '#a0a0a0', gramos: macros.carbohidratos, kcal: kcalCarbs, regla: 'el resto de las calorías totales' },
   ]
 
   return (
