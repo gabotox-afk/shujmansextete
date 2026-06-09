@@ -5,7 +5,7 @@ const proximamente = [
   {
     icon: '🏋️',
     title: 'Registrar entrenamientos',
-    desc: 'Anotá tus series, repeticiones y pesos de cada sesión, ejercicio por ejercicio.',
+    desc: 'Anotá tus serie, repeticiones y pesos de cada sesión, ejercicio por ejercicio.',
   },
   {
     icon: '📈',
