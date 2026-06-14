@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Página de inicio del dashboard (panel principal).
+ * Muestra un saludo personalizado, el scoreboard con los datos clave del usuario,
+ * el plan nutricional del día y una sección de funcionalidades próximas.
+ */
 import { useOutletContext } from 'react-router-dom'
 import { calcularMacros, OBJETIVO_LABEL } from '../utils/macros'
 

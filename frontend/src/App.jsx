@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Componente raíz de la aplicación GymTracker.
+ * Define el árbol de rutas con React Router v6: rutas públicas (landing, login, register,
+ * onboarding) y rutas privadas bajo `/dashboard` anidadas dentro de `DashboardLayout`.
+ * Cualquier ruta no reconocida redirige a la landing page.
+ */
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Landing from './pages/Landing'
 import Login from './pages/Login'

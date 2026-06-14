@@ -1,5 +1,16 @@
+/**
+ * @fileoverview Página de inicio (landing page) pública de GymTracker.
+ * Presenta las funcionalidades del producto, la sección "cómo funciona"
+ * y los llamados a la acción para registrarse o iniciar sesión.
+ * No requiere autenticación.
+ */
+
 import { Link } from 'react-router-dom'
 
+/**
+ * Datos estáticos de las tarjetas de características mostradas en la sección "Features".
+ * @type {Array<{ icon: string, title: string, desc: string }>}
+ */
 const features = [
   {
     icon: '🏋️',
@@ -33,6 +44,10 @@ const features = [
   },
 ]
 
+/**
+ * Datos estáticos de los pasos de la sección "Cómo funciona".
+ * @type {Array<{ num: string, title: string, desc: string }>}
+ */
 const steps = [
   {
     num: '01',
@@ -56,6 +71,19 @@ const steps = [
   },
 ]
 
+/**
+ * Página de inicio pública de GymTracker.
+ * Renderiza la barra de navegación, la sección hero con CTA principales,
+ * la grilla de características del producto, la sección de pasos y el footer.
+ * Es la primera pantalla que ve un usuario no autenticado.
+ *
+ * @component
+ * @returns {JSX.Element}
+ *
+ * @example
+ * // Registrada en el router como ruta raíz:
+ * <Route path="/" element={<Landing />} />
+ */
 export default function Landing() {
   return (
     <>

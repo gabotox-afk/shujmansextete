@@ -1,19 +1,61 @@
+/**
+ * @fileoverview Página de nutrición y seguimiento de comidas diarias.
+ * Contiene los siguientes sub-componentes internos:
+ * - `ProgresoDelDia` – barras de progreso de kcal y macros vs. objetivo
+ * - `CargarComida` – formulario para registrar una comida con múltiples alimentos
+ * - `AgregarAlimento` – buscador con debounce + modo de carga manual
+ * - `CampoManual` – input numérico reutilizable para macros manuales
+ * - `ListaComidas` – lista colapsable de comidas del día con opción de eliminar
+ * - `DistribucionDeMacros` – gráfico de barras del plan nutricional recomendado
+ * - `Dato` – fila clave-valor para paneles informativos
+ */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { comidaApi } from '../api/comida'
 import { calcularMacros, OBJETIVO_LABEL, ACTIVIDAD_LABEL } from '../utils/macros'
 
+/**
+ * Redondea un número a 1 decimal.
+ *
+ * @param {number} n - Número a redondear
+ * @returns {number} El número redondeado a 1 decimal
+ *
+ * @example
+ * round1(12.456) // 12.5
+ * round1(0.004)  // 0
+ */
 const round1 = (n) => Math.round(n * 10) / 10
 
+/**
+ * Lista de tipos de comida disponibles para clasificar registros.
+ * @type {Array<{ value: string, label: string, icon: string }>}
+ */
 const TIPOS_COMIDA = [
   { value: 'desayuno', label: 'Desayuno', icon: '🌅' },
   { value: 'almuerzo', label: 'Almuerzo', icon: '☀️' },
   { value: 'merienda', label: 'Merienda', icon: '🍪' },
-  { value: 'cena',     label: 'Cena',     icon: '🌙' },
-  { value: 'snack',    label: 'Snack',    icon: '🥨' },
+  { value: 'cena', label: 'Cena', icon: '🌙' },
+  { value: 'snack', label: 'Snack', icon: '🥨' },
 ]
+
+/**
+ * Mapa indexado por `value` del tipo de comida para acceso O(1).
+ * @type {Object.<string, { value: string, label: string, icon: string }>}
+ */
 const TIPO_INFO = Object.fromEntries(TIPOS_COMIDA.map(t => [t.value, t]))
 
+/**
+ * Acumula los totales nutricionales de un arreglo de ítems de comida.
+ *
+ * @param {Array<{ kcal: number, proteinas: number, grasas: number, carbohidratos: number }>} items
+ *   Lista de alimentos ya calculados por gramos consumidos
+ * @returns {{ kcal: number, proteinas: number, grasas: number, carbohidratos: number }}
+ *   Suma total de cada macronutriente
+ *
+ * @example
+ * sumarTotales([{ kcal: 200, proteinas: 30, grasas: 5, carbohidratos: 20 }])
+ * // { kcal: 200, proteinas: 30, grasas: 5, carbohidratos: 20 }
+ */
 const sumarTotales = (items) => items.reduce((acc, it) => ({
   kcal: acc.kcal + it.kcal,
   proteinas: acc.proteinas + it.proteinas,
@@ -21,6 +63,20 @@ const sumarTotales = (items) => items.reduce((acc, it) => ({
   carbohidratos: acc.carbohidratos + it.carbohidratos,
 }), { kcal: 0, proteinas: 0, grasas: 0, carbohidratos: 0 })
 
+/**
+ * Página principal de dieta y nutrición del dashboard.
+ * Carga el resumen nutricional del día desde la API al montar,
+ * calcula los macros objetivo del usuario en el cliente y
+ * compone los sub-componentes de progreso, carga y lista de comidas.
+ *
+ * @component
+ * @returns {JSX.Element | null} La vista completa de dieta,
+ *   o `null` si el usuario no tiene datos físicos suficientes para calcular macros.
+ *
+ * @example
+ * // Registrada como ruta hija del dashboard:
+ * <Route path="dieta" element={<Dieta />} />
+ */
 export default function Dieta() {
   const { usuario } = useOutletContext()
   const macrosObjetivo = calcularMacros(usuario)
@@ -92,12 +148,33 @@ export default function Dieta() {
 }
 
 /* ── PROGRESO DEL DÍA ──────────────────────────── */
+/**
+ * Muestra las barras de progreso de calorías y macros consumidos
+ * comparados con el objetivo diario del usuario.
+ * Mientras los datos cargan, muestra un mensaje de espera.
+ * Si el consumo supera el 105% del objetivo, la barra y el texto se colorean en rojo.
+ *
+ * @param {Object} props
+ * @param {{ totales: { kcal: number, proteinas: number, grasas: number, carbohidratos: number }, racha: number, comidas: Array, fecha: string } | null} props.resumen
+ *   Datos del resumen diario retornados por la API. `null` mientras carga.
+ * @param {{ calorias: number, proteinas: number, grasas: number, carbohidratos: number }} props.objetivo
+ *   Macros objetivo calculados con Mifflin-St Jeor para el usuario
+ * @param {boolean} props.cargando - `true` mientras la petición a la API está en curso
+ * @returns {JSX.Element}
+ *
+ * @example
+ * <ProgresoDelDia
+ *   resumen={{ totales: { kcal: 1200, proteinas: 80, grasas: 40, carbohidratos: 120 }, racha: 3, comidas: [], fecha: '2026-06-14' }}
+ *   objetivo={{ calorias: 2500, proteinas: 150, grasas: 75, carbohidratos: 280 }}
+ *   cargando={false}
+ * />
+ */
 function ProgresoDelDia({ resumen, objetivo, cargando }) {
   const filas = [
-    { nombre: 'Calorías',      icon: '🔥', color: 'var(--clr-primary)', valor: resumen?.totales.kcal ?? 0,          objetivo: objetivo.calorias,      unidad: 'kcal' },
-    { nombre: 'Proteínas',     icon: '🥩', color: 'var(--clr-primary)', valor: resumen?.totales.proteinas ?? 0,     objetivo: objetivo.proteinas,     unidad: 'g' },
-    { nombre: 'Grasas',        icon: '🥑', color: '#e8c468',            valor: resumen?.totales.grasas ?? 0,        objetivo: objetivo.grasas,        unidad: 'g' },
-    { nombre: 'Carbohidratos', icon: '🍞', color: '#a0a0a0',            valor: resumen?.totales.carbohidratos ?? 0, objetivo: objetivo.carbohidratos, unidad: 'g' },
+    { nombre: 'Calorías', icon: '🔥', color: 'var(--clr-primary)', valor: resumen?.totales.kcal ?? 0, objetivo: objetivo.calorias, unidad: 'kcal' },
+    { nombre: 'Proteínas', icon: '🥩', color: 'var(--clr-primary)', valor: resumen?.totales.proteinas ?? 0, objetivo: objetivo.proteinas, unidad: 'g' },
+    { nombre: 'Grasas', icon: '🥑', color: '#e8c468', valor: resumen?.totales.grasas ?? 0, objetivo: objetivo.grasas, unidad: 'g' },
+    { nombre: 'Carbohidratos', icon: '🍞', color: '#a0a0a0', valor: resumen?.totales.carbohidratos ?? 0, objetivo: objetivo.carbohidratos, unidad: 'g' },
   ]
 
   return (
@@ -141,6 +218,20 @@ function ProgresoDelDia({ resumen, objetivo, cargando }) {
 }
 
 /* ── CARGAR UNA COMIDA (en lote: varios alimentos → una sola comida) ── */
+/**
+ * Formulario completo para registrar una comida con múltiples alimentos.
+ * Permite elegir el tipo de comida (desayuno, almuerzo, etc.), darle un nombre
+ * opcional y agregar varios alimentos mediante `AgregarAlimento`. Acumula
+ * los ítems en una lista local y los envía en un único request a la API.
+ *
+ * @param {Object} props
+ * @param {() => void} props.onRegistrada - Callback que se ejecuta después de guardar
+ *   exitosamente la comida, para refrescar el resumen diario en el padre
+ * @returns {JSX.Element}
+ *
+ * @example
+ * <CargarComida onRegistrada={() => cargarResumenDiario()} />
+ */
 function CargarComida({ onRegistrada }) {
   const [tipo, setTipo] = useState('almuerzo')
   const [nombreCombo, setNombreCombo] = useState('')
@@ -287,13 +378,49 @@ function CargarComida({ onRegistrada }) {
   )
 }
 
-// pequeño helper para anteponer el artículo correcto ("el desayuno", "la merienda"…)
+/**
+ * Antepone el artículo definido correcto al nombre del tipo de comida.
+ * Los tipos femeninos (merienda, cena) usan "la"; el resto usa "el".
+ *
+ * @param {'desayuno' | 'almuerzo' | 'merienda' | 'cena' | 'snack'} tipo
+ *   Clave del tipo de comida
+ * @returns {string} Nombre del tipo con artículo (ej: "el almuerzo", "la merienda")
+ *
+ * @example
+ * TIP_O('almuerzo')  // 'el almuerzo'
+ * TIP_O('merienda')  // 'la merienda'
+ * TIP_O('cena')      // 'la cena'
+ */
 function TIP_O(tipo) {
   const femenino = ['merienda', 'cena']
   return `${femenino.includes(tipo) ? 'la' : 'el'} ${TIPO_INFO[tipo].label.toLowerCase()}`
 }
 
 /* ── Buscar / cargar manualmente UN alimento y agregarlo a la lista ── */
+/**
+ * Sub-formulario para buscar un alimento del catálogo o cargarlo manualmente.
+ * Implementa búsqueda con debounce de 300 ms, cierre del dropdown al hacer click fuera
+ * y un modo manual que persiste el nuevo alimento en el catálogo personal del usuario.
+ *
+ * @param {Object} props
+ * @param {(item: {
+ *   alimentoId: number,
+ *   nombre: string,
+ *   gramos: number,
+ *   kcalPor100g: number,
+ *   proteinasPor100g: number,
+ *   grasasPor100g: number,
+ *   carbohidratosPor100g: number,
+ *   kcal: number,
+ *   proteinas: number,
+ *   grasas: number,
+ *   carbohidratos: number
+ * }) => void} props.onAgregar - Callback que recibe el ítem calculado para sumarlo a la lista del padre
+ * @returns {JSX.Element}
+ *
+ * @example
+ * <AgregarAlimento onAgregar={(item) => setItems(prev => [...prev, item])} />
+ */
 function AgregarAlimento({ onAgregar }) {
   const [query, setQuery] = useState('')
   const [resultados, setResultados] = useState([])
@@ -603,6 +730,25 @@ function CampoManual({ label, valor, onChange, icon }) {
 }
 
 /* ── LISTA DE COMIDAS DE HOY (agrupadas por desayuno/almuerzo/etc) ── */
+/**
+ * Lista de comidas registradas durante el día, agrupadas por tipo.
+ * Cada fila es colapsable para ver el detalle de alimentos individuales.
+ * Incluye un botón de eliminar por comida con estado de carga local.
+ *
+ * @param {Object} props
+ * @param {{ comidas: Array<{ id: number, tipo: string, nombre: string | null, totales: Object, items: Array }>, fecha: string } | null} props.resumen
+ *   Datos del resumen diario. `null` o vacío muestra un estado vacío.
+ * @param {boolean} props.cargando - `true` mientras la petición inicial está en curso
+ * @param {() => void} props.onEliminada - Callback para refrescar el resumen tras eliminar una comida
+ * @returns {JSX.Element}
+ *
+ * @example
+ * <ListaComidas
+ *   resumen={resumenDelDia}
+ *   cargando={false}
+ *   onEliminada={() => cargarResumen()}
+ * />
+ */
 function ListaComidas({ resumen, cargando, onEliminada }) {
   const [eliminando, setEliminando] = useState(null)
   const [abierta, setAbierta] = useState(null)
@@ -678,6 +824,25 @@ function ListaComidas({ resumen, cargando, onEliminada }) {
 }
 
 /* ── DISTRIBUCIÓN DE MACROS RECOMENDADA ────────── */
+/**
+ * Sección informativa del plan nutricional recomendado para el usuario.
+ * Muestra las calorías totales, las barras de distribución de macros
+ * (proteínas / grasas / carbohidratos) y dos paneles explicativos:
+ * cómo se calculó el plan y qué datos del perfil se usaron.
+ *
+ * @param {Object} props
+ * @param {{ peso: number, altura: number, edad: number, sexo: 'M'|'F', actividadFisica: number, objetivo: string }} props.usuario
+ *   Objeto con los datos físicos del usuario autenticado
+ * @param {{ calorias: number, proteinas: number, grasas: number, carbohidratos: number }} props.macros
+ *   Macros objetivo ya calculados por `calcularMacros()`
+ * @returns {JSX.Element}
+ *
+ * @example
+ * <DistribucionDeMacros
+ *   usuario={usuario}
+ *   macros={{ calorias: 2500, proteinas: 150, grasas: 75, carbohidratos: 281 }}
+ * />
+ */
 function DistribucionDeMacros({ usuario, macros }) {
   const kcalProteinas = macros.proteinas * 4
   const kcalGrasas = macros.grasas * 9
@@ -766,6 +931,20 @@ function DistribucionDeMacros({ usuario, macros }) {
   )
 }
 
+/**
+ * Fila de dato clave-valor para paneles de información nutricional.
+ * Muestra la etiqueta en monospace uppercase y el valor alineado a la derecha.
+ *
+ * @param {Object} props
+ * @param {string} props.label - Etiqueta del dato (ej: "Peso", "Objetivo")
+ * @param {string | number} props.valor - Valor a mostrar
+ * @param {boolean} [props.resaltado=false] - Si `true`, colorea el valor en dorado (`--clr-primary`)
+ * @returns {JSX.Element}
+ *
+ * @example
+ * <Dato label="Peso" valor="75 kg" />
+ * <Dato label="Objetivo" valor="Ganar músculo" resaltado />
+ */
 function Dato({ label, valor, resaltado }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--clr-border)', paddingBottom: 12 }}>

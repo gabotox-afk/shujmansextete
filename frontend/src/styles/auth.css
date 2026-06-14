@@ -1,0 +1,240 @@
+/* ── AUTH PAGE ───────────────────────────────── */
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr;
+  background: var(--clr-bg);
+}
+
+@media (min-width: 992px) {
+  .auth-page {
+    grid-template-columns: 5fr 7fr;
+  }
+}
+
+.auth-left {
+  background: url('/src/assets/arnold2.jpeg') center/cover no-repeat;
+  display: none;
+  flex-direction: column;
+  padding: 60px;
+  position: relative;
+  border-right: 1px solid var(--clr-border);
+}
+
+@media (min-width: 992px) {
+  .auth-left {
+    display: flex;
+  }
+}
+
+.auth-left::before {
+  content: '';
+  position: absolute;
+  inset: -2;
+  background: linear-gradient(135deg, rgba(10, 10, 10, 0.9) 0%, rgba(10, 10, 10, 0.7) 100%);
+  z-index: 1;
+}
+
+.auth-left-logo,
+.auth-left-content {
+  position: relative;
+  z-index: 2;
+}
+
+.auth-left-logo {
+  font-family: var(--font-heading);
+  font-size: 1.8rem;
+  letter-spacing: 2px;
+  color: #fff;
+  margin-bottom: 60px;
+}
+
+.auth-left-logo span {
+  color: var(--clr-primary);
+}
+
+.auth-left-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.auth-left-title {
+  font-size: clamp(2.5rem, 4vw, 4rem);
+  line-height: 0.95;
+  margin-bottom: 24px;
+}
+
+.auth-left-title .hl {
+  color: var(--clr-primary);
+}
+
+.auth-left-desc {
+  font-size: 1.1rem;
+  color: var(--clr-text-muted);
+  max-width: 400px;
+  margin-bottom: 48px;
+}
+
+.auth-features-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.auth-features-list li {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 1rem;
+  color: var(--clr-text);
+}
+
+.auth-feat-icon {
+  color: var(--clr-primary);
+  font-size: 1.2rem;
+}
+
+/* ── AUTH RIGHT ──────────────────────────────── */
+.auth-right {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--clr-bg-2);
+  padding: 48px;
+  border: 1px solid var(--clr-border);
+  border-top: 3px solid var(--clr-primary);
+}
+
+.auth-card-title {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.auth-card-sub {
+  font-size: 1rem;
+  color: var(--clr-text-muted);
+  margin-bottom: 40px;
+}
+
+.auth-card-sub a {
+  color: var(--clr-primary);
+  text-decoration: underline;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 32px 0;
+  color: var(--clr-text-faint);
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--clr-border);
+}
+
+/* ── FORMS ───────────────────────────────────── */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.form-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--clr-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.form-input-wrap {
+  position: relative;
+}
+
+.form-input {
+  width: 100%;
+  padding: 14px 16px 14px 44px;
+  background: var(--clr-bg);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-sm);
+  color: var(--clr-text);
+  font-size: 1rem;
+  transition: all var(--duration) var(--ease);
+}
+
+.form-input:focus {
+  border-color: var(--clr-primary);
+  background: #000;
+}
+
+.form-input-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--clr-text-faint);
+  font-size: 1.1rem;
+}
+
+.form-input:focus+.form-input-icon {
+  color: var(--clr-primary);
+}
+
+.form-password-toggle {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  color: var(--clr-text-faint);
+  padding: 0;
+}
+
+.form-password-toggle:hover {
+  color: var(--clr-text);
+}
+
+.form-error {
+  font-size: 0.85rem;
+  color: var(--clr-error);
+  margin-top: 8px;
+}
+
+.alert {
+  padding: 16px;
+  margin-bottom: 24px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-size: 0.95rem;
+}
+
+.alert-error {
+  background: rgba(204, 51, 51, 0.1);
+  border-color: rgba(204, 51, 51, 0.3);
+  color: #ff6b6b;
+}
+
+/* ── AUTH RESPONSIVE ─────────────────────────── */
+@media (max-width: 768px) {
+  .auth-card {
+    padding: 32px 24px;
+  }
+}

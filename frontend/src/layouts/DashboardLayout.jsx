@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Layout principal del panel de control (dashboard).
+ * Renderiza el sidebar de navegación colapsable, la topbar mobile y el área de contenido.
+ * Actúa como guardia de ruta: redirige a /login si no hay sesión activa,
+ * y a /onboarding si el usuario no completó el alta.
+ */
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 

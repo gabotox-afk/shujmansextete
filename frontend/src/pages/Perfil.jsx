@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Página de configuración del perfil físico del usuario.
+ * Permite actualizar datos físicos y objetivo, recalculando los macros
+ * automáticamente en cada guardado mediante `usuarioApi.completarOnboarding()`.
+ */
 import { useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { usuarioApi } from '../api/usuario'
@@ -10,9 +15,9 @@ const ACTIVIDAD_OPCIONES = [
 ]
 
 const OBJETIVO_OPCIONES = [
-  { value: 'perder',   label: 'Perder grasa',  icon: '📉' },
+  { value: 'perder', label: 'Perder grasa', icon: '📉' },
   { value: 'mantener', label: 'Mantener peso', icon: '⚖️' },
-  { value: 'ganar',    label: 'Ganar músculo', icon: '📈' },
+  { value: 'ganar', label: 'Ganar músculo', icon: '📈' },
 ]
 
 export default function Perfil() {
@@ -45,12 +50,12 @@ export default function Perfil() {
     const edad = Number(form.edad)
     const peso = Number(form.peso)
     const altura = Number(form.altura)
-    if (!form.edad || edad <= 0 || edad > 100)  e.edad = 'Edad inválida'
-    if (!form.peso || peso <= 0)                e.peso = 'Peso inválido'
-    if (!form.altura || altura <= 0)            e.altura = 'Altura inválida'
-    if (!form.sexo)                             e.sexo = 'Seleccioná una opción'
-    if (form.actividadFisica === '')            e.actividadFisica = 'Seleccioná una opción'
-    if (!form.objetivo)                         e.objetivo = 'Seleccioná tu objetivo'
+    if (!form.edad || edad <= 0 || edad > 100) e.edad = 'Edad inválida'
+    if (!form.peso || peso <= 0) e.peso = 'Peso inválido'
+    if (!form.altura || altura <= 0) e.altura = 'Altura inválida'
+    if (!form.sexo) e.sexo = 'Seleccioná una opción'
+    if (form.actividadFisica === '') e.actividadFisica = 'Seleccioná una opción'
+    if (!form.objetivo) e.objetivo = 'Seleccioná tu objetivo'
     return e
   }
 

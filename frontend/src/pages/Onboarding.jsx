@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Wizard de onboarding (alta de usuario).
+ * Guía al nuevo usuario a través de 3 pasos para recopilar sus datos físicos,
+ * nivel de actividad y objetivo. Al finalizar, llama al backend para calcular
+ * el plan nutricional personalizado y lo muestra en una pantalla de resultado.
+ */
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usuarioApi } from '../api/usuario'
@@ -10,9 +16,9 @@ const ACTIVIDAD_OPCIONES = [
 ]
 
 const OBJETIVO_OPCIONES = [
-  { value: 'perder',   label: 'Perder grasa',  icon: '📉', desc: 'Déficit calórico controlado' },
+  { value: 'perder', label: 'Perder grasa', icon: '📉', desc: 'Déficit calórico controlado' },
   { value: 'mantener', label: 'Mantener peso', icon: '⚖️', desc: 'Sostener tu composición actual' },
-  { value: 'ganar',    label: 'Ganar músculo', icon: '📈', desc: 'Superávit para crecer' },
+  { value: 'ganar', label: 'Ganar músculo', icon: '📈', desc: 'Superávit para crecer' },
 ]
 
 const STEPS = ['Datos físicos', 'Actividad', 'Objetivo']
@@ -54,12 +60,12 @@ export default function Onboarding() {
       const peso = Number(form.peso)
       const altura = Number(form.altura)
       if (!form.edad || edad <= 0 || edad > 100) e.edad = 'Ingresá una edad válida'
-      if (!form.peso || peso <= 0)               e.peso = 'Ingresá un peso válido (kg)'
-      if (!form.altura || altura <= 0)           e.altura = 'Ingresá una altura válida (cm)'
-      if (!form.sexo)                            e.sexo = 'Seleccioná una opción'
+      if (!form.peso || peso <= 0) e.peso = 'Ingresá un peso válido (kg)'
+      if (!form.altura || altura <= 0) e.altura = 'Ingresá una altura válida (cm)'
+      if (!form.sexo) e.sexo = 'Seleccioná una opción'
     }
     if (s === 1 && form.actividadFisica === '') e.actividadFisica = 'Seleccioná una opción'
-    if (s === 2 && !form.objetivo)              e.objetivo = 'Seleccioná tu objetivo'
+    if (s === 2 && !form.objetivo) e.objetivo = 'Seleccioná tu objetivo'
     return e
   }
 
@@ -100,9 +106,9 @@ export default function Onboarding() {
   /* ── RESULT SCREEN ─────────────────────────── */
   if (macros) {
     const filas = [
-      { nombre: 'Proteínas',     icon: '🥩', color: 'var(--clr-primary)', valor: macros.proteinas },
-      { nombre: 'Grasas',        icon: '🥑', color: '#e8c468',            valor: macros.grasas },
-      { nombre: 'Carbohidratos', icon: '🍞', color: '#a0a0a0',            valor: macros.carbohidratos },
+      { nombre: 'Proteínas', icon: '🥩', color: 'var(--clr-primary)', valor: macros.proteinas },
+      { nombre: 'Grasas', icon: '🥑', color: '#e8c468', valor: macros.grasas },
+      { nombre: 'Carbohidratos', icon: '🍞', color: '#a0a0a0', valor: macros.carbohidratos },
     ]
     const total = macros.proteinas + macros.grasas + macros.carbohidratos
 

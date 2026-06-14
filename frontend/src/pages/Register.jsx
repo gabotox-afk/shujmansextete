@@ -1,21 +1,27 @@
+/**
+ * @fileoverview Página de registro de nuevos usuarios.
+ * Incluye validación de formulario en el cliente (nombre, email, contraseña,
+ * confirmación) y un indicador visual de fortaleza de contraseña (escala 1-5).
+ * Al registrarse con éxito, redirige al onboarding.
+ */
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { authApi } from '../api/auth'
 
 export default function Register() {
   const navigate = useNavigate()
-  const [form, setForm]         = useState({ nombre: '', email: '', password: '', confirm: '' })
-  const [errors, setErrors]     = useState({})
+  const [form, setForm] = useState({ nombre: '', email: '', password: '', confirm: '' })
+  const [errors, setErrors] = useState({})
   const [apiError, setApiError] = useState('')
-  const [loading, setLoading]   = useState(false)
+  const [loading, setLoading] = useState(false)
   const [showPass, setShowPass] = useState(false)
 
   const validate = () => {
     const e = {}
-    if (!form.nombre.trim())  e.nombre = 'El nombre es obligatorio'
-    if (!form.email)          e.email  = 'El email es obligatorio'
+    if (!form.nombre.trim()) e.nombre = 'El nombre es obligatorio'
+    if (!form.email) e.email = 'El email es obligatorio'
     else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = 'Email inválido'
-    if (!form.password)       e.password = 'La contraseña es obligatoria'
+    if (!form.password) e.password = 'La contraseña es obligatoria'
     else if (form.password.length < 6) e.password = 'Mínimo 6 caracteres'
     if (form.password !== form.confirm) e.confirm = 'Las contraseñas no coinciden'
     return e
@@ -50,7 +56,7 @@ export default function Register() {
     const p = form.password
     if (!p) return 0
     let s = 0
-    if (p.length >= 6)  s++
+    if (p.length >= 6) s++
     if (p.length >= 10) s++
     if (/[A-Z]/.test(p)) s++
     if (/[0-9]/.test(p)) s++
@@ -185,7 +191,7 @@ export default function Register() {
               {form.password && (
                 <div style={{ marginTop: 8 }}>
                   <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
-                    {[1,2,3,4,5].map(i => (
+                    {[1, 2, 3, 4, 5].map(i => (
                       <div key={i} style={{
                         flex: 1, height: 3, borderRadius: 4,
                         background: i <= strength ? strengthColor : 'var(--clr-border)',

@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Funciones de cálculo nutricional basadas en la fórmula Mifflin-St Jeor.
+ * Estas utilidades replican en el cliente la misma lógica que corre en el backend,
+ * permitiendo mostrar los macros al instante sin esperar una respuesta del servidor.
+ */
 // Misma fórmula que el backend (Mifflin-St Jeor + factor de actividad + ajuste por objetivo)
 // para poder mostrar los macros al instante sin esperar al servidor.
 export const calcularMacros = ({ peso, altura, edad, sexo, actividadFisica, objetivo }) => {

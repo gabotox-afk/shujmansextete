@@ -1,6 +1,26 @@
+/**
+ * @fileoverview Página de entrenamientos dentro del dashboard.
+ * Muestra el nivel de actividad del usuario y un placeholder "próximamente"
+ * que anticipa las funcionalidades de rutinas, registro de sesiones e historial.
+ */
+
 import { useOutletContext } from 'react-router-dom'
 import { ACTIVIDAD_LABEL } from '../utils/macros'
 
+/**
+ * Página de entrenamientos del dashboard.
+ * Accede al usuario autenticado a través del contexto compartido por
+ * `DashboardLayout` y muestra su nivel de actividad física declarado.
+ * El resto de las funcionalidades (rutinas, sesiones, historial) están en
+ * construcción y se presentan como tarjetas de "próximamente".
+ *
+ * @component
+ * @returns {JSX.Element}
+ *
+ * @example
+ * // Registrada como ruta hija del dashboard:
+ * <Route path="entrenamientos" element={<Entrenamientos />} />
+ */
 export default function Entrenamientos() {
   const { usuario } = useOutletContext()
 

@@ -1,6 +1,26 @@
+/**
+ * @fileoverview Página de métricas corporales dentro del dashboard.
+ * Calcula y muestra el IMC, gasto energético estimado y los datos del perfil
+ * físico del usuario. Incluye el sub-componente privado `Dato`.
+ */
+
 import { useOutletContext } from 'react-router-dom'
 import { calcularMacros } from '../utils/macros'
 
+/**
+ * Página de métricas corporales del dashboard.
+ * Obtiene el usuario del contexto de `DashboardLayout` y calcula:
+ * - **IMC** (índice de masa corporal) con la fórmula peso / (altura_m)²
+ * - **Categoría IMC** (bajo peso / saludable / sobrepeso / obesidad)
+ * - **Macros y calorías objetivo** mediante `calcularMacros()`
+ *
+ * @component
+ * @returns {JSX.Element}
+ *
+ * @example
+ * // Registrada como ruta hija del dashboard:
+ * <Route path="metricas" element={<Metricas />} />
+ */
 export default function Metricas() {
   const { usuario } = useOutletContext()
   const macros = calcularMacros(usuario)
@@ -8,6 +28,18 @@ export default function Metricas() {
     ? usuario.peso / Math.pow(usuario.altura / 100, 2)
     : null
 
+  /**
+   * Devuelve la categoría de IMC según los rangos de la OMS.
+   *
+   * @param {number} valor - Valor numérico del IMC calculado
+   * @returns {'Bajo peso' | 'Saludable' | 'Sobrepeso' | 'Obesidad'}
+   *
+   * @example
+   * imcCategoria(17.5) // 'Bajo peso'
+   * imcCategoria(22)   // 'Saludable'
+   * imcCategoria(27)   // 'Sobrepeso'
+   * imcCategoria(32)   // 'Obesidad'
+   */
   const imcCategoria = (valor) => {
     if (valor < 18.5) return 'Bajo peso'
     if (valor < 25)   return 'Saludable'
@@ -71,6 +103,21 @@ export default function Metricas() {
   )
 }
 
+/**
+ * Fila de dato clave-valor para paneles de métricas.
+ * Muestra una etiqueta en monospace y un valor formateado,
+ * con opción de resaltado dorado para datos importantes.
+ *
+ * @param {Object} props
+ * @param {string} props.label - Etiqueta descriptiva del dato (ej: "Peso", "Edad")
+ * @param {string | number} props.valor - Valor a mostrar junto a la etiqueta
+ * @param {boolean} [props.resaltado=false] - Si `true`, el valor se muestra en color dorado
+ * @returns {JSX.Element}
+ *
+ * @example
+ * <Dato label="Peso" valor="75 kg" />
+ * <Dato label="Calorías objetivo" valor="2800 kcal" resaltado />
+ */
 function Dato({ label, valor, resaltado }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--clr-border)', paddingBottom: 12 }}>

@@ -1,0 +1,100 @@
+/* ── RESET & BASE ──────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* Epic, Dark, Premium Palette */
+  --clr-bg: #0a0a0a;
+  /* Deep black */
+  --clr-bg-2: #141414;
+  /* Charcoal gray */
+  --clr-bg-3: #1a1a1a;
+  /* Lighter charcoal */
+  --clr-surface: rgba(255, 255, 255, 0.03);
+  --clr-surface-hover: rgba(255, 255, 255, 0.06);
+  --clr-border: rgba(255, 255, 255, 0.08);
+  --clr-border-hover: rgba(212, 175, 55, 0.3);
+
+  /* Gold Accents */
+  --clr-primary: #D4AF37;
+  /* Premium Gold */
+  --clr-primary-dim: rgba(212, 175, 55, 0.1);
+  --clr-accent: #FFDF00;
+  /* Muted yellow/gold */
+
+  --clr-text: #f5f5f5;
+  /* Smoke white */
+  --clr-text-muted: #a0a0a0;
+  /* Gray for readability */
+  --clr-text-faint: #666666;
+
+  --clr-success: #D4AF37;
+  /* Use gold for success as well to keep palette restricted */
+  --clr-error: #cc3333;
+  /* Raw dark red */
+
+  /* Minimal Radii */
+  --radius-sm: 0px;
+  --radius-md: 2px;
+  --radius-lg: 4px;
+  --radius-xl: 4px;
+
+  /* Typography */
+  --font-heading: 'Oswald', 'Impact', 'Arial Black', sans-serif;
+  --font-body: 'Outfit', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+
+  /* Transitions */
+  --ease: cubic-bezier(0.25, 1, 0.25, 1);
+  --duration: 0.3s;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--clr-bg);
+  color: var(--clr-text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+  color: #ffffff;
+  letter-spacing: 1px;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: var(--font-heading);
+  cursor: pointer;
+  border: none;
+  outline: none;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+input {
+  font-family: var(--font-body);
+  outline: none;
+  border: none;
+}

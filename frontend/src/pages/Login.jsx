@@ -1,18 +1,25 @@
+/**
+ * @fileoverview Página de inicio de sesión.
+ * Valida el formulario en el cliente y redirige según el estado
+ * de onboarding del usuario autenticado:
+ * - Si `onboardingCompleto` es `true` → `/dashboard`
+ * - Si es `false` → `/onboarding`
+ */
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { authApi } from '../api/auth'
 
 export default function Login() {
   const navigate = useNavigate()
-  const [form, setForm]       = useState({ email: '', password: '' })
-  const [errors, setErrors]   = useState({})
+  const [form, setForm] = useState({ email: '', password: '' })
+  const [errors, setErrors] = useState({})
   const [apiError, setApiError] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPass, setShowPass] = useState(false)
 
   const validate = () => {
     const e = {}
-    if (!form.email)    e.email = 'El email es obligatorio'
+    if (!form.email) e.email = 'El email es obligatorio'
     else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = 'Email inválido'
     if (!form.password) e.password = 'La contraseña es obligatoria'
     return e
