@@ -13,6 +13,8 @@ import DashboardLayout from './layouts/DashboardLayout'
 import Dashboard from './pages/Dashboard'
 import Dieta from './pages/Dieta'
 import Entrenamientos from './pages/Entrenamientos'
+import RutinaEditor from './pages/RutinaEditor'
+import SesionActiva from './pages/SesionActiva'
 import Metricas from './pages/Metricas'
 import Perfil from './pages/Perfil'
 
@@ -29,6 +31,8 @@ export default function App() {
           <Route index               element={<Dashboard />} />
           <Route path="dieta"        element={<Dieta />} />
           <Route path="entrenamientos" element={<Entrenamientos />} />
+          <Route path="entrenamientos/rutina/:id" element={<RutinaEditor />} />
+          <Route path="entrenamientos/sesion/:id" element={<SesionActiva />} />
           <Route path="metricas"     element={<Metricas />} />
           <Route path="perfil"       element={<Perfil />} />
         </Route>

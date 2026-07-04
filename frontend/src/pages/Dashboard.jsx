@@ -1,28 +1,79 @@
-/**
- * @fileoverview Página de inicio del dashboard (panel principal).
- * Muestra un saludo personalizado, el scoreboard con los datos clave del usuario,
- * el plan nutricional del día y una sección de funcionalidades próximas.
- */
-import { useOutletContext } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useOutletContext, useNavigate } from 'react-router-dom'
 import { calcularMacros, OBJETIVO_LABEL } from '../utils/macros'
+import { entrenamientoApi } from '../api/entrenamiento'
 
-const proximamente = [
-  {
-    icon: '🏋️',
-    title: 'Registrar entrenamientos',
-    desc: 'Anotá tus serie, repeticiones y pesos de cada sesión, ejercicio por ejercicio.',
-  },
-  {
-    icon: '📈',
-    title: 'Seguimiento de progreso',
-    desc: 'Gráficos y comparativas para ver tu evolución semana a semana.',
-  },
-  {
-    icon: '🏆',
-    title: 'Récords personales',
-    desc: 'Tu PR de cada ejercicio, siempre a la vista, listo para superarse.',
-  },
-]
+function EntrenamientoHoy() {
+  const navigate = useNavigate()
+  const [hoy, setHoy] = useState(null)
+  const [cargando, setCargando] = useState(true)
+
+  useEffect(() => {
+    entrenamientoApi.obtenerDiaDeHoy()
+      .then(setHoy)
+      .catch(() => setHoy(null))
+      .finally(() => setCargando(false))
+  }, [])
+
+  const iniciarSesion = async () => {
+    const sesion = await entrenamientoApi.iniciarSesion({ rutinaDiaId: hoy.rutinaDia.id })
+    navigate(`/dashboard/entrenamientos/sesion/${sesion.id}`)
+  }
+
+  if (cargando) return null
+
+  return (
+    <div className="panel hoy-widget">
+      <div className="panel-head">
+        <h2 className="panel-title">Tu entrenamiento de hoy 🏋️</h2>
+      </div>
+
+      {!hoy || (!hoy.rutinaDia && !hoy.estaDescansando) ? (
+        <div className="hoy-sin-config">
+          No tenés ningún entrenamiento asignado para hoy.{' '}
+          <button className="btn btn-ghost small" onClick={() => navigate('/dashboard/entrenamientos?tab=calendario')}>
+            Configurar calendario
+          </button>
+        </div>
+      ) : hoy.estaDescansando ? (
+        <div className="hoy-descanso">Día de descanso 😴</div>
+      ) : (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div>
+              <span className="chip chip-xs">{hoy.rutinaDia.rutina?.nombre}</span>
+              <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.3rem', marginTop: 8 }}>
+                {hoy.rutinaDia.nombre}
+              </h3>
+            </div>
+            {hoy.tieneOverride && <span className="cal-override-badge" style={{ position: 'static' }}>override</span>}
+          </div>
+
+          <div className="hoy-ejs-lista">
+            {hoy.rutinaDia.ejercicios.slice(0, 6).map(ejSlot => (
+              <div key={ejSlot.id} className="hoy-ej-row">
+                <span className="hoy-ej-nombre">{ejSlot.ejercicio.nombre}</span>
+                <span className="hoy-ej-obj">
+                  {ejSlot.seriesObj}×{ejSlot.repsObj}
+                  {ejSlot.rirObj != null ? ` @ RIR ${ejSlot.rirObj}` : ''}
+                </span>
+              </div>
+            ))}
+            {hoy.rutinaDia.ejercicios.length > 6 && (
+              <p className="text-muted small" style={{ paddingLeft: 14 }}>
+                y {hoy.rutinaDia.ejercicios.length - 6} más...
+              </p>
+            )}
+          </div>
+
+          <button className="btn btn-primary" onClick={iniciarSesion}>
+            Empezar sesión →
+          </button>
+        </>
+      )}
+    </div>
+  )
+}
 
 export default function Dashboard() {
   const { usuario } = useOutletContext()
@@ -34,8 +85,7 @@ export default function Dashboard() {
       <div className="dash-eyebrow">Panel · Miembro #{String(usuario.id).padStart(4, '0')}</div>
       <h1 className="dash-title">Hola, {primerNombre} 👋</h1>
       <p className="dash-sub">
-        Este es tu centro de operaciones. Acá vas a ver tu plan nutricional del día y,
-        muy pronto, tus entrenamientos, métricas y récords personales.
+        Este es tu centro de operaciones. Acá vas a ver tu plan nutricional del día y tus entrenamientos.
       </p>
 
       <div className="scoreboard">
@@ -84,22 +134,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      <div className="coming-soon">
-        <span className="coming-soon-tag">En construcción</span>
-        <h2 className="coming-soon-title">Lo que se viene para tu entrenamiento</h2>
-        <p className="coming-soon-desc">
-          Estamos construyendo el resto de la plataforma para que tengas todo en un solo lugar.
-        </p>
-        <div className="features-grid" style={{ marginTop: 32, width: '100%' }}>
-          {proximamente.map((item) => (
-            <div className="feature-card" key={item.title}>
-              <div className="feature-icon">{item.icon}</div>
-              <h3 className="feature-card-title">{item.title}</h3>
-              <p className="feature-card-desc">{item.desc}</p>
-            </div>
-          ))}
-        </div>
-      </div>
+      <EntrenamientoHoy />
     </div>
   )
 }

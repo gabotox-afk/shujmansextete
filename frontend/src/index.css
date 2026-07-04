@@ -1,9 +1,3 @@
-/**
- * @fileoverview Punto de entrada de estilos de GymTracker.
- * Importa todos los módulos CSS en el orden correcto:
- * base → utilidades → landing → auth → dashboard → componentes → dieta
- */
-
 /* 1. Variables, reset y estilos de elementos HTML */
 @import './styles/base.css';
 
@@ -24,3 +18,6 @@
 
 /* 7. Página de dieta: progress bars, buscador, lista de comidas */
 @import './styles/dieta.css';
+
+/* 8. Sección de entrenamientos: rutinas, calendario, sesiones */
+@import './styles/entrenamiento.css';

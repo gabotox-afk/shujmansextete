@@ -25,8 +25,13 @@ model Usuario {
   actividadFisica    Int?
   objetivo           String?
 
-  alimentos Alimento[]
-  comidas   Comida[]
+  alimentos           Alimento[]
+  comidas             Comida[]
+  ejercicios          Ejercicio[]
+  rutinas             Rutina[]
+  calendarios         Calendario[]
+  calendariosOverride CalendarioOverride[]
+  sesiones            Sesion[]
 }
 
 // Catálogo de alimentos: macros por cada 100g.
@@ -81,4 +86,143 @@ model ItemComida {
   createdAt     DateTime  @default(now())
 
   @@index([comidaId])
+}
+
+// ─── ENTRENAMIENTOS ───────────────────────────────────────────────────────────
+
+// Catálogo de ejercicios: global (usuarioId null) + personalizados por usuario.
+model Ejercicio {
+  id            Int      @id @default(autoincrement())
+  nombre        String
+  grupoMuscular String   // pecho|espalda|hombros|biceps|triceps|cuadriceps|isquiotibiales|gluteos|core|cardio
+  descripcion   String?
+  usuarioId     Int?
+  usuario       Usuario? @relation(fields: [usuarioId], references: [id])
+  createdAt     DateTime @default(now())
+
+  rutinaDiaEjercicios RutinaDiaEjercicio[]
+  seriesRegistradas   SerieRegistrada[]
+
+  @@index([usuarioId])
+  @@index([grupoMuscular])
+}
+
+// Rutina: plan de entrenamiento (ej. "Mi Push/Pull/Legs").
+model Rutina {
+  id          Int       @id @default(autoincrement())
+  usuarioId   Int
+  usuario     Usuario   @relation(fields: [usuarioId], references: [id])
+  nombre      String
+  descripcion String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  dias                RutinaDia[]
+  calendarios         Calendario[]
+  calendariosOverride CalendarioOverride[]
+
+  @@index([usuarioId])
+}
+
+// Un día dentro de una rutina (ej. "Push", "Pierna A").
+model RutinaDia {
+  id        Int      @id @default(autoincrement())
+  rutinaId  Int
+  rutina    Rutina   @relation(fields: [rutinaId], references: [id], onDelete: Cascade)
+  nombre    String
+  orden     Int
+  createdAt DateTime @default(now())
+
+  ejercicios          RutinaDiaEjercicio[]
+  calendarios         Calendario[]
+  calendariosOverride CalendarioOverride[]
+  sesiones            Sesion[]
+
+  @@index([rutinaId])
+}
+
+// Slot de ejercicio dentro de un día de rutina, con objetivos de volumen.
+model RutinaDiaEjercicio {
+  id          Int       @id @default(autoincrement())
+  rutinaDiaId Int
+  rutinaDia   RutinaDia @relation(fields: [rutinaDiaId], references: [id], onDelete: Cascade)
+  ejercicioId Int
+  ejercicio   Ejercicio @relation(fields: [ejercicioId], references: [id])
+  orden       Int
+  seriesObj   Int       // series objetivo (ej: 4)
+  repsObj     String    // reps objetivo (ej: "8-12" o "10")
+  rirObj      Int?      // RIR objetivo (ej: 2)
+  notas       String?
+
+  @@index([rutinaDiaId])
+}
+
+// Schedule semanal recurrente: qué rutinaDia corresponde a cada día de semana.
+// diaSemana: 1=lunes … 7=domingo (ISO). rutinaDiaId null = día de descanso.
+model Calendario {
+  id          Int        @id @default(autoincrement())
+  usuarioId   Int
+  usuario     Usuario    @relation(fields: [usuarioId], references: [id])
+  diaSemana   Int
+  rutinaDiaId Int?
+  rutinaDia   RutinaDia? @relation(fields: [rutinaDiaId], references: [id])
+  rutinaId    Int?
+  rutina      Rutina?    @relation(fields: [rutinaId], references: [id])
+
+  @@unique([usuarioId, diaSemana])
+  @@index([usuarioId])
+}
+
+// Override puntual para una semana específica (no afecta semanas futuras).
+// fechaSemana = el lunes 00:00 UTC de esa semana.
+model CalendarioOverride {
+  id          Int        @id @default(autoincrement())
+  usuarioId   Int
+  usuario     Usuario    @relation(fields: [usuarioId], references: [id])
+  fechaSemana DateTime
+  diaSemana   Int
+  rutinaDiaId Int?
+  rutinaDia   RutinaDia? @relation(fields: [rutinaDiaId], references: [id])
+  rutinaId    Int?
+  rutina      Rutina?    @relation(fields: [rutinaId], references: [id])
+  motivo      String?
+  createdAt   DateTime   @default(now())
+
+  @@unique([usuarioId, fechaSemana, diaSemana])
+  @@index([usuarioId, fechaSemana])
+}
+
+// Una sesión de entrenamiento completada o en curso.
+model Sesion {
+  id          Int        @id @default(autoincrement())
+  usuarioId   Int
+  usuario     Usuario    @relation(fields: [usuarioId], references: [id])
+  rutinaDiaId Int?
+  rutinaDia   RutinaDia? @relation(fields: [rutinaDiaId], references: [id])
+  fecha       DateTime   @default(now())
+  duracionMin Int?
+  notas       String?
+  completada  Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+
+  series SerieRegistrada[]
+
+  @@index([usuarioId, fecha])
+}
+
+// Una serie registrada dentro de una sesión.
+model SerieRegistrada {
+  id          Int       @id @default(autoincrement())
+  sesionId    Int
+  sesion      Sesion    @relation(fields: [sesionId], references: [id], onDelete: Cascade)
+  ejercicioId Int
+  ejercicio   Ejercicio @relation(fields: [ejercicioId], references: [id])
+  numeroSerie Int
+  reps        Int
+  pesoKg      Float
+  rir         Int?
+  createdAt   DateTime  @default(now())
+
+  @@index([sesionId])
+  @@index([ejercicioId])
 }
