@@ -31,15 +31,18 @@ function Timer({ inicio }) {
 function BuscadorEjercicios({ onSeleccionar, onCerrar }) {
   const [grupo, setGrupo] = useState(GRUPOS[0])
   const [query, setQuery] = useState('')
-  const [ejercicios, setEjercicios] = useState([])
-  const [cargando, setCargando] = useState(false)
+  const [todos, setTodos] = useState([])
+  const [cargando, setCargando] = useState(true)
 
   useEffect(() => {
-    setCargando(true)
-    entrenamientoApi.buscarEjercicios(query, query ? '' : grupo)
-      .then(setEjercicios)
-      .finally(() => setCargando(false))
-  }, [grupo, query])
+    entrenamientoApi.buscarEjercicios('', '').then(setTodos).finally(() => setCargando(false))
+  }, [])
+
+  const ejercicios = todos.filter(ej => {
+    const matchQuery = !query || ej.nombre.toLowerCase().includes(query.toLowerCase())
+    const matchGrupo = query ? true : ej.grupoMuscular === grupo
+    return matchQuery && matchGrupo
+  })
 
   return (
     <div className="modal-overlay" onClick={onCerrar}>
@@ -73,6 +76,7 @@ function BuscadorEjercicios({ onSeleccionar, onCerrar }) {
 // ─── EjercicioCard ─────────────────────────────────────────────────────────────
 
 function EjercicioCard({ sesionId, ejercicio, objetivo, seriesIniciales, historial }) {
+  const esCardio = ejercicio.grupoMuscular === 'cardio'
   const [series, setSeries] = useState(seriesIniciales || [])
   const [agregando, setAgregando] = useState(false)
   const [nuevaSerie, setNuevaSerie] = useState({ reps: '', pesoKg: '', rir: '' })
@@ -90,13 +94,13 @@ function EjercicioCard({ sesionId, ejercicio, objetivo, seriesIniciales, histori
   }
 
   const agregarSerie = async () => {
-    if (!nuevaSerie.reps || !nuevaSerie.pesoKg) return
+    if (!nuevaSerie.reps) return
     const sr = await entrenamientoApi.registrarSerie(sesionId, {
       ejercicioId: ejercicio.id,
       numeroSerie: series.length + 1,
       reps: Number(nuevaSerie.reps),
-      pesoKg: parseFloat(nuevaSerie.pesoKg),
-      rir: nuevaSerie.rir !== '' ? Number(nuevaSerie.rir) : null,
+      pesoKg: esCardio ? 0 : parseFloat(nuevaSerie.pesoKg) || 0,
+      rir: esCardio ? null : (nuevaSerie.rir !== '' ? Number(nuevaSerie.rir) : null),
     })
     setSeries(prev => [...prev, sr])
     setAgregando(false)
@@ -117,21 +121,28 @@ function EjercicioCard({ sesionId, ejercicio, objetivo, seriesIniciales, histori
     await entrenamientoApi.actualizarSerie(sesionId, serieId, patch)
   }
 
+  const objetivoLabel = objetivo
+    ? esCardio
+      ? `${objetivo.repsObj} min`
+      : `${objetivo.seriesObj}×${objetivo.repsObj}${objetivo.rirObj != null ? ` @ RIR ${objetivo.rirObj}` : ''}`
+    : null
+
   return (
     <div className="sesion-ej-card">
       <div className="sesion-ej-head">
         <div>
           <div className="sesion-ej-nombre">{ejercicio.nombre}</div>
           <span className="chip chip-xs">{ejercicio.grupoMuscular}</span>
-          {objetivo && (
-            <span className="sesion-objetivo">
-              {objetivo.seriesObj}×{objetivo.repsObj}{objetivo.rirObj != null ? ` @ RIR ${objetivo.rirObj}` : ''}
-            </span>
-          )}
+          {objetivoLabel && <span className="sesion-objetivo">{objetivoLabel}</span>}
         </div>
-        {ultimoHistorial && (
+        {!esCardio && ultimoHistorial && (
           <div className="sesion-historial-hint">
             Última vez: {ultimoHistorial.pesoKg}kg × {ultimoHistorial.reps} reps
+          </div>
+        )}
+        {esCardio && ultimoHistorial && (
+          <div className="sesion-historial-hint">
+            Última vez: {ultimoHistorial.reps} min
           </div>
         )}
       </div>
@@ -140,7 +151,11 @@ function EjercicioCard({ sesionId, ejercicio, objetivo, seriesIniciales, histori
         <table className="series-tabla">
           <thead>
             <tr>
-              <th>#</th><th>Reps</th><th>Kg</th><th>RIR</th><th></th>
+              <th>#</th>
+              <th>{esCardio ? 'Min' : 'Reps'}</th>
+              {!esCardio && <th>Kg</th>}
+              {!esCardio && <th>RIR</th>}
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -157,27 +172,31 @@ function EjercicioCard({ sesionId, ejercicio, objetivo, seriesIniciales, histori
                     onBlur={e => guardarCampoSerie(sr.id, 'reps', e.target.value)}
                   />
                 </td>
-                <td>
-                  <input
-                    type="number"
-                    className="input input-xs"
-                    value={sr.pesoKg}
-                    step={0.5}
-                    onChange={e => actualizarCampoSerie(sr.id, 'pesoKg', e.target.value)}
-                    onBlur={e => guardarCampoSerie(sr.id, 'pesoKg', e.target.value)}
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    className="input input-xs"
-                    value={sr.rir ?? ''}
-                    min={0}
-                    placeholder="—"
-                    onChange={e => actualizarCampoSerie(sr.id, 'rir', e.target.value)}
-                    onBlur={e => guardarCampoSerie(sr.id, 'rir', e.target.value)}
-                  />
-                </td>
+                {!esCardio && (
+                  <td>
+                    <input
+                      type="number"
+                      className="input input-xs"
+                      value={sr.pesoKg}
+                      step={0.5}
+                      onChange={e => actualizarCampoSerie(sr.id, 'pesoKg', e.target.value)}
+                      onBlur={e => guardarCampoSerie(sr.id, 'pesoKg', e.target.value)}
+                    />
+                  </td>
+                )}
+                {!esCardio && (
+                  <td>
+                    <input
+                      type="number"
+                      className="input input-xs"
+                      value={sr.rir ?? ''}
+                      min={0}
+                      placeholder="—"
+                      onChange={e => actualizarCampoSerie(sr.id, 'rir', e.target.value)}
+                      onBlur={e => guardarCampoSerie(sr.id, 'rir', e.target.value)}
+                    />
+                  </td>
+                )}
                 <td>
                   <button className="btn btn-danger small" onClick={() => eliminarSerie(sr.id)}>✕</button>
                 </td>
@@ -189,15 +208,25 @@ function EjercicioCard({ sesionId, ejercicio, objetivo, seriesIniciales, histori
 
       {agregando ? (
         <div className="nueva-serie-form">
-          <input type="number" className="input input-sm" placeholder="Reps" value={nuevaSerie.reps} onChange={e => setNuevaSerie(p => ({ ...p, reps: e.target.value }))} />
-          <input type="number" className="input input-sm" placeholder="Kg" step={0.5} value={nuevaSerie.pesoKg} onChange={e => setNuevaSerie(p => ({ ...p, pesoKg: e.target.value }))} />
-          <input type="number" className="input input-sm" placeholder="RIR" value={nuevaSerie.rir} onChange={e => setNuevaSerie(p => ({ ...p, rir: e.target.value }))} />
+          <input
+            type="number"
+            className="input input-sm"
+            placeholder={esCardio ? 'Min' : 'Reps'}
+            value={nuevaSerie.reps}
+            onChange={e => setNuevaSerie(p => ({ ...p, reps: e.target.value }))}
+          />
+          {!esCardio && (
+            <input type="number" className="input input-sm" placeholder="Kg" step={0.5} value={nuevaSerie.pesoKg} onChange={e => setNuevaSerie(p => ({ ...p, pesoKg: e.target.value }))} />
+          )}
+          {!esCardio && (
+            <input type="number" className="input input-sm" placeholder="RIR" value={nuevaSerie.rir} onChange={e => setNuevaSerie(p => ({ ...p, rir: e.target.value }))} />
+          )}
           <button className="btn btn-primary small" onClick={agregarSerie}>Registrar</button>
           <button className="btn btn-ghost small" onClick={() => setAgregando(false)}>✕</button>
         </div>
       ) : (
         <button className="btn btn-ghost small" style={{ marginTop: 8 }} onClick={prefillarDesdeAnterior}>
-          + Serie
+          + {esCardio ? 'Cardio' : 'Serie'}
         </button>
       )}
     </div>

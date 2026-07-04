@@ -38,33 +38,7 @@ export const calendarioRepository = {
     return await prisma.calendario.deleteMany({ where: { usuarioId, diaSemana } })
   },
 
-  async findOverride(usuarioId, fechaSemana, diaSemana) {
-    return await prisma.calendarioOverride.findUnique({
-      where: { usuarioId_fechaSemana_diaSemana: { usuarioId, fechaSemana, diaSemana } },
-      include: incluirDia,
-    })
-  },
-
-  async findOverrideByUsuarioYSemana(usuarioId, fechaSemana) {
-    return await prisma.calendarioOverride.findMany({
-      where: { usuarioId, fechaSemana },
-      include: incluirDia,
-      orderBy: { diaSemana: 'asc' },
-    })
-  },
-
-  async upsertOverride(usuarioId, fechaSemana, diaSemana, { rutinaDiaId, rutinaId, motivo }) {
-    return await prisma.calendarioOverride.upsert({
-      where: { usuarioId_fechaSemana_diaSemana: { usuarioId, fechaSemana, diaSemana } },
-      create: { usuarioId, fechaSemana, diaSemana, rutinaDiaId, rutinaId, motivo },
-      update: { rutinaDiaId, rutinaId, motivo },
-      include: incluirDia,
-    })
-  },
-
-  async eliminarOverride(usuarioId, fechaSemana, diaSemana) {
-    return await prisma.calendarioOverride.deleteMany({
-      where: { usuarioId, fechaSemana, diaSemana },
-    })
+  async eliminarTodosLosDias(usuarioId) {
+    return await prisma.calendario.deleteMany({ where: { usuarioId } })
   },
 }

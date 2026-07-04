@@ -25,13 +25,12 @@ model Usuario {
   actividadFisica    Int?
   objetivo           String?
 
-  alimentos           Alimento[]
-  comidas             Comida[]
-  ejercicios          Ejercicio[]
-  rutinas             Rutina[]
-  calendarios         Calendario[]
-  calendariosOverride CalendarioOverride[]
-  sesiones            Sesion[]
+  alimentos   Alimento[]
+  comidas     Comida[]
+  ejercicios  Ejercicio[]
+  rutinas     Rutina[]
+  calendarios Calendario[]
+  sesiones    Sesion[]
 }
 
 // Catálogo de alimentos: macros por cada 100g.
@@ -117,26 +116,25 @@ model Rutina {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  dias                RutinaDia[]
-  calendarios         Calendario[]
-  calendariosOverride CalendarioOverride[]
+  dias        RutinaDia[]
+  calendarios Calendario[]
 
   @@index([usuarioId])
 }
 
 // Un día dentro de una rutina (ej. "Push", "Pierna A").
 model RutinaDia {
-  id        Int      @id @default(autoincrement())
-  rutinaId  Int
-  rutina    Rutina   @relation(fields: [rutinaId], references: [id], onDelete: Cascade)
-  nombre    String
-  orden     Int
-  createdAt DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  rutinaId   Int
+  rutina     Rutina   @relation(fields: [rutinaId], references: [id], onDelete: Cascade)
+  nombre     String
+  orden      Int
+  diaSemana  Int?     // preset: qué día de la semana ocupa (1=lun…7=dom), null si no asignado
+  createdAt  DateTime @default(now())
 
-  ejercicios          RutinaDiaEjercicio[]
-  calendarios         Calendario[]
-  calendariosOverride CalendarioOverride[]
-  sesiones            Sesion[]
+  ejercicios  RutinaDiaEjercicio[]
+  calendarios Calendario[]
+  sesiones    Sesion[]
 
   @@index([rutinaId])
 }
@@ -171,25 +169,6 @@ model Calendario {
 
   @@unique([usuarioId, diaSemana])
   @@index([usuarioId])
-}
-
-// Override puntual para una semana específica (no afecta semanas futuras).
-// fechaSemana = el lunes 00:00 UTC de esa semana.
-model CalendarioOverride {
-  id          Int        @id @default(autoincrement())
-  usuarioId   Int
-  usuario     Usuario    @relation(fields: [usuarioId], references: [id])
-  fechaSemana DateTime
-  diaSemana   Int
-  rutinaDiaId Int?
-  rutinaDia   RutinaDia? @relation(fields: [rutinaDiaId], references: [id])
-  rutinaId    Int?
-  rutina      Rutina?    @relation(fields: [rutinaId], references: [id])
-  motivo      String?
-  createdAt   DateTime   @default(now())
-
-  @@unique([usuarioId, fechaSemana, diaSemana])
-  @@index([usuarioId, fechaSemana])
 }
 
 // Una sesión de entrenamiento completada o en curso.

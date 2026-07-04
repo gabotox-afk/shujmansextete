@@ -36,6 +36,8 @@ export const entrenamientoApi = {
     fetch(`${BASE}/rutinas/${id}`, { method: 'PATCH', headers: authHeaders(), body: JSON.stringify(datos) }).then(handle),
   eliminarRutina: (id) =>
     fetch(`${BASE}/rutinas/${id}`, { method: 'DELETE', headers: authHeaders() }).then(handle),
+  activarRutina: (id) =>
+    fetch(`${BASE}/rutinas/${id}/activar`, { method: 'POST', headers: authHeaders() }).then(handle),
 
   // Días
   agregarDia: (rutinaId, datos) =>
@@ -60,15 +62,6 @@ export const entrenamientoApi = {
     fetch(`${BASE}/calendario/${diaSemana}`, { method: 'PUT', headers: authHeaders(), body: JSON.stringify(datos) }).then(handle),
   eliminarDiaCalendario: (diaSemana) =>
     fetch(`${BASE}/calendario/${diaSemana}`, { method: 'DELETE', headers: authHeaders() }).then(handle),
-  obtenerOverridesSemana: (fecha) => {
-    const p = new URLSearchParams()
-    if (fecha) p.set('fecha', fecha)
-    return fetch(`${BASE}/calendario/overrides?${p}`, { headers: authHeaders() }).then(handle)
-  },
-  crearOverride: (datos) =>
-    fetch(`${BASE}/calendario/overrides`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(datos) }).then(handle),
-  eliminarOverride: (datos) =>
-    fetch(`${BASE}/calendario/overrides`, { method: 'DELETE', headers: authHeaders(), body: JSON.stringify(datos) }).then(handle),
 
   // Día de hoy
   obtenerDiaDeHoy: () =>

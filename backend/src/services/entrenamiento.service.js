@@ -142,49 +142,32 @@ export const entrenamientoService = {
     return await calendarioRepository.eliminarDia(usuarioId, diaSemana)
   },
 
-  async crearOverride(usuarioId, { fecha, diaSemana, rutinaDiaId, rutinaId, motivo }) {
-    const fechaSemana = getLunesUTC(fecha ? new Date(fecha) : new Date())
-    if (rutinaDiaId) {
-      await this._verificarDia(usuarioId, rutinaDiaId)
-    }
-    return await calendarioRepository.upsertOverride(
-      usuarioId, fechaSemana, diaSemana,
-      { rutinaDiaId: rutinaDiaId ?? null, rutinaId: rutinaId ?? null, motivo }
-    )
-  },
-
-  async eliminarOverride(usuarioId, { fecha, diaSemana }) {
-    const fechaSemana = getLunesUTC(fecha ? new Date(fecha) : new Date())
-    return await calendarioRepository.eliminarOverride(usuarioId, fechaSemana, diaSemana)
-  },
-
-  async obtenerOverridesSemana(usuarioId, fecha) {
-    const fechaSemana = getLunesUTC(fecha ? new Date(fecha) : new Date())
-    return await calendarioRepository.findOverrideByUsuarioYSemana(usuarioId, fechaSemana)
-  },
-
   async obtenerDiaDeHoy(usuarioId) {
-    const hoy = new Date()
-    const fechaSemana = getLunesUTC(hoy)
-    const diaSemana = getDiaSemanaISO(hoy)
-
-    const override = await calendarioRepository.findOverride(usuarioId, fechaSemana, diaSemana)
-
-    if (override !== null) {
-      if (!override.rutinaDiaId) {
-        return { rutinaDia: null, estaDescansando: true, tieneOverride: true }
-      }
-      const rutinaDia = await rutinaRepository.findDiaConEjercicios(override.rutinaDiaId)
-      return { rutinaDia, estaDescansando: false, tieneOverride: true }
-    }
-
+    const diaSemana = getDiaSemanaISO(new Date())
     const entrada = await calendarioRepository.findEntradaDia(usuarioId, diaSemana)
     if (!entrada || !entrada.rutinaDiaId) {
-      return { rutinaDia: null, estaDescansando: !entrada, tieneOverride: false }
+      return { rutinaDia: null, estaDescansando: false }
+    }
+    const rutinaDia = await rutinaRepository.findDiaConEjercicios(entrada.rutinaDiaId)
+    return { rutinaDia, estaDescansando: false }
+  },
+
+  async activarRutina(usuarioId, rutinaId) {
+    const rutina = await rutinaRepository.findByIdYUsuario(rutinaId, usuarioId)
+    if (!rutina) throw new Error('Rutina no encontrada')
+
+    const diasConDiaSemana = rutina.dias.filter(d => d.diaSemana != null)
+
+    await calendarioRepository.eliminarTodosLosDias(usuarioId)
+
+    for (const dia of diasConDiaSemana) {
+      await calendarioRepository.upsertDia(usuarioId, dia.diaSemana, {
+        rutinaDiaId: dia.id,
+        rutinaId: rutina.id,
+      })
     }
 
-    const rutinaDia = await rutinaRepository.findDiaConEjercicios(entrada.rutinaDiaId)
-    return { rutinaDia, estaDescansando: false, tieneOverride: false }
+    return { ok: true, diasAsignados: diasConDiaSemana.length }
   },
 
   // ── Sesiones ──────────────────────────────────────────────────────────────

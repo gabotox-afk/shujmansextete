@@ -214,32 +214,16 @@ export const entrenamientoController = {
     } catch (e) { next(e) }
   },
 
-  async crearOverride(req, res, next) {
+  async activarRutina(req, res, next) {
     try {
-      const { fecha, diaSemana, rutinaDiaId, rutinaId, motivo } = req.body
-      if (!diaSemana || diaSemana < 1 || diaSemana > 7) {
-        return res.status(400).json({ success: false, message: 'diaSemana inválido' })
-      }
-      const data = await entrenamientoService.crearOverride(req.usuario.id, {
-        fecha, diaSemana, rutinaDiaId, rutinaId, motivo,
-      })
+      const id = toInt(req.params.id)
+      if (!id) return res.status(400).json({ success: false, message: 'Id inválido' })
+      const data = await entrenamientoService.activarRutina(req.usuario.id, id)
       res.json({ success: true, data })
-    } catch (e) { next(e) }
-  },
-
-  async eliminarOverride(req, res, next) {
-    try {
-      const { fecha, diaSemana } = req.body
-      await entrenamientoService.eliminarOverride(req.usuario.id, { fecha, diaSemana })
-      res.json({ success: true })
-    } catch (e) { next(e) }
-  },
-
-  async obtenerOverridesSemana(req, res, next) {
-    try {
-      const data = await entrenamientoService.obtenerOverridesSemana(req.usuario.id, req.query.fecha)
-      res.json({ success: true, data })
-    } catch (e) { next(e) }
+    } catch (e) {
+      if (e.message === 'Rutina no encontrada') return res.status(404).json({ success: false, message: e.message })
+      next(e)
+    }
   },
 
   async obtenerDiaDeHoy(req, res, next) {

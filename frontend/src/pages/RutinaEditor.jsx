@@ -3,27 +3,34 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { entrenamientoApi } from '../api/entrenamiento'
 
 const GRUPOS = ['pecho', 'espalda', 'hombros', 'biceps', 'triceps', 'cuadriceps', 'isquiotibiales', 'gluteos', 'core', 'cardio']
+const DIAS_SEMANA_LABELS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
 
 // ─── BuscadorEjercicios ────────────────────────────────────────────────────────
 
 function BuscadorEjercicios({ onSeleccionar, onCerrar }) {
   const [grupo, setGrupo] = useState(GRUPOS[0])
   const [query, setQuery] = useState('')
-  const [ejercicios, setEjercicios] = useState([])
+  const [todos, setTodos] = useState([])
   const [mostrarCrear, setMostrarCrear] = useState(false)
   const [nuevoEj, setNuevoEj] = useState({ nombre: '', grupoMuscular: GRUPOS[0] })
-  const [cargando, setCargando] = useState(false)
+  const [cargando, setCargando] = useState(true)
 
   useEffect(() => {
-    setCargando(true)
-    entrenamientoApi.buscarEjercicios(query, query ? '' : grupo)
-      .then(setEjercicios)
+    entrenamientoApi.buscarEjercicios('', '')
+      .then(setTodos)
       .finally(() => setCargando(false))
-  }, [grupo, query])
+  }, [])
+
+  const filtrados = todos.filter(ej => {
+    const matchQuery = !query || ej.nombre.toLowerCase().includes(query.toLowerCase())
+    const matchGrupo = query ? true : ej.grupoMuscular === grupo
+    return matchQuery && matchGrupo
+  })
 
   const crearPersonalizado = async () => {
     if (!nuevoEj.nombre.trim()) return
     const ej = await entrenamientoApi.crearEjercicioPersonalizado(nuevoEj)
+    setTodos(prev => [...prev, ej])
     onSeleccionar(ej)
   }
 
@@ -57,13 +64,13 @@ function BuscadorEjercicios({ onSeleccionar, onCerrar }) {
 
         <div className="ej-list">
           {cargando && <p className="text-muted small">Cargando...</p>}
-          {!cargando && ejercicios.map(ej => (
+          {!cargando && filtrados.map(ej => (
             <button key={ej.id} className="ej-item" onClick={() => onSeleccionar(ej)}>
               <span className="ej-nombre">{ej.nombre}</span>
               <span className="chip chip-xs">{ej.grupoMuscular}</span>
             </button>
           ))}
-          {!cargando && ejercicios.length === 0 && (
+          {!cargando && filtrados.length === 0 && (
             <p className="text-muted small">No se encontraron ejercicios</p>
           )}
         </div>
@@ -96,7 +103,8 @@ function BuscadorEjercicios({ onSeleccionar, onCerrar }) {
 
 // ─── EjercicioRow ──────────────────────────────────────────────────────────────
 
-function EjercicioRow({ rutinaId, diaId, ejSlot, onActualizado, onEliminado }) {
+function EjercicioRow({ rutinaId, diaId, ejSlot, onActualizado, onEliminado, onDragStart, onDragOver, onDrop, index }) {
+  const esCardio = ejSlot.ejercicio.grupoMuscular === 'cardio'
   const [editando, setEditando] = useState({
     seriesObj: ejSlot.seriesObj,
     repsObj: ejSlot.repsObj,
@@ -109,10 +117,10 @@ function EjercicioRow({ rutinaId, diaId, ejSlot, onActualizado, onEliminado }) {
     setEditando(nuevo)
     clearTimeout(saveTimeout.current)
     saveTimeout.current = setTimeout(async () => {
-      const guardado = await entrenamientoApi.actualizarEjercicioEnDia(
-        rutinaId, diaId, ejSlot.id,
-        { seriesObj: Number(nuevo.seriesObj), repsObj: nuevo.repsObj, rirObj: nuevo.rirObj !== '' ? Number(nuevo.rirObj) : null }
-      )
+      const payload = esCardio
+        ? { seriesObj: 1, repsObj: nuevo.repsObj, rirObj: null }
+        : { seriesObj: Number(nuevo.seriesObj), repsObj: nuevo.repsObj, rirObj: nuevo.rirObj !== '' ? Number(nuevo.rirObj) : null }
+      const guardado = await entrenamientoApi.actualizarEjercicioEnDia(rutinaId, diaId, ejSlot.id, payload)
       onActualizado(guardado)
     }, 600)
   }
@@ -123,43 +131,68 @@ function EjercicioRow({ rutinaId, diaId, ejSlot, onActualizado, onEliminado }) {
   }
 
   return (
-    <div className="editor-ej-row">
+    <div
+      className="editor-ej-row"
+      draggable
+      onDragStart={() => onDragStart(index)}
+      onDragOver={e => { e.preventDefault(); onDragOver(index) }}
+      onDrop={() => onDrop(index)}
+    >
+      <span className="ej-drag-handle" title="Arrastrar para reordenar">⠿</span>
+
       <div className="editor-ej-info">
         <span className="editor-ej-nombre">{ejSlot.ejercicio.nombre}</span>
         <span className="chip chip-xs">{ejSlot.ejercicio.grupoMuscular}</span>
       </div>
+
       <div className="editor-ej-campos">
-        <label className="editor-campo">
-          <span className="editor-campo-label">Series</span>
-          <input
-            type="number"
-            className="input input-sm"
-            value={editando.seriesObj}
-            min={1}
-            onChange={e => actualizar('seriesObj', e.target.value)}
-          />
-        </label>
-        <label className="editor-campo">
-          <span className="editor-campo-label">Reps</span>
-          <input
-            type="text"
-            className="input input-sm"
-            value={editando.repsObj}
-            placeholder="8-12"
-            onChange={e => actualizar('repsObj', e.target.value)}
-          />
-        </label>
-        <label className="editor-campo">
-          <span className="editor-campo-label">RIR</span>
-          <input
-            type="number"
-            className="input input-sm"
-            value={editando.rirObj}
-            min={0}
-            placeholder="—"
-            onChange={e => actualizar('rirObj', e.target.value)}
-          />
-        </label>
+        {esCardio ? (
+          <label className="editor-campo">
+            <span className="editor-campo-label">Min</span>
+            <input
+              type="number"
+              className="input input-sm"
+              value={editando.repsObj}
+              min={1}
+              placeholder="20"
+              onChange={e => actualizar('repsObj', e.target.value)}
+            />
+          </label>
+        ) : (
+          <>
+            <label className="editor-campo">
+              <span className="editor-campo-label">Series</span>
+              <input
+                type="number"
+                className="input input-sm"
+                value={editando.seriesObj}
+                min={1}
+                onChange={e => actualizar('seriesObj', e.target.value)}
+              />
+            </label>
+            <label className="editor-campo">
+              <span className="editor-campo-label">Reps</span>
+              <input
+                type="text"
+                className="input input-sm"
+                value={editando.repsObj}
+                placeholder="8-12"
+                onChange={e => actualizar('repsObj', e.target.value)}
+              />
+            </label>
+            <label className="editor-campo">
+              <span className="editor-campo-label">RIR</span>
+              <input
+                type="number"
+                className="input input-sm"
+                value={editando.rirObj}
+                min={0}
+                placeholder="—"
+                onChange={e => actualizar('rirObj', e.target.value)}
+              />
+            </label>
+          </>
+        )}
       </div>
       <button className="btn btn-danger small" onClick={eliminar}>✕</button>
     </div>
@@ -171,6 +204,12 @@ function EjercicioRow({ rutinaId, diaId, ejSlot, onActualizado, onEliminado }) {
 function DiaEditor({ rutina, dia, onActualizado }) {
   const [buscadorAbierto, setBuscadorAbierto] = useState(false)
   const [ejercicios, setEjercicios] = useState(dia.ejercicios || [])
+  const dragIndex = useRef(null)
+  const dragOverIndex = useRef(null)
+
+  useEffect(() => {
+    setEjercicios(dia.ejercicios || [])
+  }, [dia.id])
 
   const agregarEjercicio = async (ej) => {
     setBuscadorAbierto(false)
@@ -189,6 +228,36 @@ function DiaEditor({ rutina, dia, onActualizado }) {
     setEjercicios(prev => prev.filter(e => e.id !== ejId))
   }
 
+  const handleDragStart = (index) => {
+    dragIndex.current = index
+  }
+
+  const handleDragOver = (index) => {
+    dragOverIndex.current = index
+  }
+
+  const handleDrop = async () => {
+    const from = dragIndex.current
+    const to = dragOverIndex.current
+    if (from === null || to === null || from === to) return
+
+    const reordenados = [...ejercicios]
+    const [movido] = reordenados.splice(from, 1)
+    reordenados.splice(to, 0, movido)
+
+    const conOrden = reordenados.map((e, i) => ({ ...e, orden: i + 1 }))
+    setEjercicios(conOrden)
+
+    await Promise.all(
+      conOrden
+        .filter((e, i) => e.orden !== ejercicios[i]?.orden)
+        .map(e => entrenamientoApi.actualizarEjercicioEnDia(rutina.id, dia.id, e.id, { orden: e.orden }))
+    )
+
+    dragIndex.current = null
+    dragOverIndex.current = null
+  }
+
   return (
     <div className="dia-editor">
       <div className="dia-editor-head">
@@ -200,14 +269,18 @@ function DiaEditor({ rutina, dia, onActualizado }) {
         {ejercicios.length === 0 && (
           <p className="text-muted small" style={{ padding: '12px 0' }}>Sin ejercicios. Agregá el primero.</p>
         )}
-        {ejercicios.map(ejSlot => (
+        {ejercicios.map((ejSlot, i) => (
           <EjercicioRow
             key={ejSlot.id}
+            index={i}
             rutinaId={rutina.id}
             diaId={dia.id}
             ejSlot={ejSlot}
             onActualizado={actualizarEj}
             onEliminado={eliminarEj}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
           />
         ))}
       </div>
@@ -268,6 +341,15 @@ export default function RutinaEditor() {
     setDiaActivo(Math.max(0, idx - 1))
   }
 
+  const toggleDiaSemana = async (dia, numDia) => {
+    const nuevo = dia.diaSemana === numDia ? null : numDia
+    await entrenamientoApi.actualizarDia(id, dia.id, { diaSemana: nuevo })
+    setRutina(prev => ({
+      ...prev,
+      dias: prev.dias.map(d => d.id === dia.id ? { ...d, diaSemana: nuevo } : d),
+    }))
+  }
+
   const iniciarSesion = async (diaId) => {
     const sesion = await entrenamientoApi.iniciarSesion({ rutinaDiaId: diaId })
     navigate(`/dashboard/entrenamientos/sesion/${sesion.id}`)
@@ -315,12 +397,27 @@ export default function RutinaEditor() {
                 className={`editor-dia-item${i === diaActivo ? ' editor-dia-item-active' : ''}`}
                 onClick={() => setDiaActivo(i)}
               >
-                <span className="editor-dia-nombre">{d.nombre}</span>
-                <button
-                  className="editor-dia-del"
-                  onClick={e => { e.stopPropagation(); eliminarDia(d.id, i) }}
-                  title="Eliminar día"
-                >✕</button>
+                <div className="editor-dia-top">
+                  <span className="editor-dia-nombre">{d.nombre}</span>
+                  <button
+                    className="editor-dia-del"
+                    onClick={e => { e.stopPropagation(); eliminarDia(d.id, i) }}
+                    title="Eliminar día"
+                  >✕</button>
+                </div>
+                <div className="dia-semana-chips" onClick={e => e.stopPropagation()}>
+                  {DIAS_SEMANA_LABELS.map((label, idx) => {
+                    const numDia = idx + 1
+                    return (
+                      <button
+                        key={numDia}
+                        className={`dia-semana-chip${d.diaSemana === numDia ? ' dia-semana-chip-active' : ''}`}
+                        onClick={() => toggleDiaSemana(d, numDia)}
+                        title={`Asignar a ${label}`}
+                      >{label}</button>
+                    )
+                  })}
+                </div>
               </div>
             ))}
           </div>
@@ -344,6 +441,12 @@ export default function RutinaEditor() {
             <button className="btn btn-ghost small editor-add-dia" onClick={() => setAgregandoDia(true)}>
               + Agregar día
             </button>
+          )}
+
+          {dias.some(d => d.diaSemana != null) && (
+            <div className="editor-preset-hint">
+              Preset configurado. Podés activar la rutina desde "Mis Rutinas".
+            </div>
           )}
         </div>
 

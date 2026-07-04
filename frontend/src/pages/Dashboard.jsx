@@ -28,15 +28,13 @@ function EntrenamientoHoy() {
         <h2 className="panel-title">Tu entrenamiento de hoy 🏋️</h2>
       </div>
 
-      {!hoy || (!hoy.rutinaDia && !hoy.estaDescansando) ? (
+      {!hoy || !hoy.rutinaDia ? (
         <div className="hoy-sin-config">
           No tenés ningún entrenamiento asignado para hoy.{' '}
           <button className="btn btn-ghost small" onClick={() => navigate('/dashboard/entrenamientos?tab=calendario')}>
             Configurar calendario
           </button>
         </div>
-      ) : hoy.estaDescansando ? (
-        <div className="hoy-descanso">Día de descanso 😴</div>
       ) : (
         <>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -46,7 +44,6 @@ function EntrenamientoHoy() {
                 {hoy.rutinaDia.nombre}
               </h3>
             </div>
-            {hoy.tieneOverride && <span className="cal-override-badge" style={{ position: 'static' }}>override</span>}
           </div>
 
           <div className="hoy-ejs-lista">
@@ -54,8 +51,10 @@ function EntrenamientoHoy() {
               <div key={ejSlot.id} className="hoy-ej-row">
                 <span className="hoy-ej-nombre">{ejSlot.ejercicio.nombre}</span>
                 <span className="hoy-ej-obj">
-                  {ejSlot.seriesObj}×{ejSlot.repsObj}
-                  {ejSlot.rirObj != null ? ` @ RIR ${ejSlot.rirObj}` : ''}
+                  {ejSlot.ejercicio.grupoMuscular === 'cardio'
+                    ? `${ejSlot.repsObj} min`
+                    : `${ejSlot.seriesObj}×${ejSlot.repsObj}${ejSlot.rirObj != null ? ` @ RIR ${ejSlot.rirObj}` : ''}`
+                  }
                 </span>
               </div>
             ))}

@@ -16,6 +16,7 @@ router.post('/rutinas', entrenamientoController.crearRutina)
 router.get('/rutinas/:id', entrenamientoController.obtenerRutina)
 router.patch('/rutinas/:id', entrenamientoController.actualizarRutina)
 router.delete('/rutinas/:id', entrenamientoController.eliminarRutina)
+router.post('/rutinas/:id/activar', entrenamientoController.activarRutina)
 
 // Días de rutina
 router.post('/rutinas/:id/dias', entrenamientoController.agregarDia)
@@ -31,11 +32,8 @@ router.delete('/rutinas/:id/dias/:diaId/ejercicios/:ejId', entrenamientoControll
 router.get('/calendario', entrenamientoController.obtenerCalendario)
 router.put('/calendario/:diaSemana', entrenamientoController.asignarDiaCalendario)
 router.delete('/calendario/:diaSemana', entrenamientoController.eliminarDiaCalendario)
-router.get('/calendario/overrides', entrenamientoController.obtenerOverridesSemana)
-router.post('/calendario/overrides', entrenamientoController.crearOverride)
-router.delete('/calendario/overrides', entrenamientoController.eliminarOverride)
 
-// Día de hoy (con lógica de override)
+// Día de hoy
 router.get('/hoy', entrenamientoController.obtenerDiaDeHoy)
 
 // Sesiones

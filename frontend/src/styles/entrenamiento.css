@@ -523,6 +523,135 @@
 .hoy-descanso { text-align: center; padding: 32px; color: var(--clr-text-muted); font-size: 1.1rem; }
 .hoy-sin-config { text-align: center; padding: 24px; color: var(--clr-text-faint); font-size: 0.9rem; }
 
+/* Drag handle en editor de ejercicios */
+.ej-drag-handle {
+  color: var(--clr-text-faint);
+  cursor: grab;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 2px 4px;
+  user-select: none;
+  flex-shrink: 0;
+}
+.ej-drag-handle:active { cursor: grabbing; }
+
+/* Día de semana chips en sidebar del editor */
+.editor-dia-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.dia-semana-chips {
+  display: flex;
+  gap: 3px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.dia-semana-chip {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 1px;
+  padding: 3px 5px;
+  background: var(--clr-bg);
+  border: 1px solid var(--clr-border);
+  color: var(--clr-text-faint);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-radius: 2px;
+}
+
+.dia-semana-chip:hover { border-color: var(--clr-primary); color: var(--clr-text); }
+
+.dia-semana-chip-active {
+  background: var(--clr-primary);
+  border-color: var(--clr-primary);
+  color: #000;
+  font-weight: 700;
+}
+
+/* Hint de preset configurado en editor */
+.editor-preset-hint {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.5px;
+  color: var(--clr-primary);
+  border: 1px solid var(--clr-primary-dim);
+  background: var(--clr-primary-dim);
+  padding: 8px 12px;
+  margin-top: 12px;
+  text-align: center;
+}
+
+/* Cal cell botón de quitar */
+.cal-clear-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: transparent;
+  border: none;
+  color: var(--clr-text-faint);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 2px 5px;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.cal-cell:hover .cal-clear-btn { opacity: 1; }
+.cal-clear-btn:hover { color: var(--clr-error); }
+
+/* Cal sub label para nombre de rutina */
+.cal-rutina-sub {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--clr-text-faint);
+  margin-top: 2px;
+}
+
+/* Botón secundario para activar rutina */
+.btn-secondary {
+  background: transparent;
+  border: 1px solid var(--clr-primary);
+  color: var(--clr-primary);
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all var(--duration) var(--ease);
+}
+.btn-secondary:hover { background: var(--clr-primary-dim); }
+.btn-secondary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Toast de confirmación */
+.toast-msg {
+  background: var(--clr-primary-dim);
+  border: 1px solid var(--clr-primary);
+  color: var(--clr-primary);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.5px;
+  padding: 12px 18px;
+  margin-bottom: 16px;
+}
+
+/* Chip label de día de semana en rutina card */
+.chip-dia-label {
+  display: inline-block;
+  background: var(--clr-primary);
+  color: #000;
+  font-size: 0.55rem;
+  font-weight: 700;
+  padding: 1px 4px;
+  margin-left: 4px;
+  border-radius: 2px;
+}
+
 /* Responsive nuevos componentes */
 @media (max-width: 1080px) {
   .calendario-grid { grid-template-columns: repeat(4, 1fr); }

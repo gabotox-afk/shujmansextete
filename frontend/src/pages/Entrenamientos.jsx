@@ -13,21 +13,27 @@ const GRUPOS = ['pecho', 'espalda', 'hombros', 'biceps', 'triceps', 'cuadriceps'
 function BuscadorEjercicios({ onSeleccionar, onCerrar }) {
   const [grupo, setGrupo] = useState(GRUPOS[0])
   const [query, setQuery] = useState('')
-  const [ejercicios, setEjercicios] = useState([])
+  const [todos, setTodos] = useState([])
   const [mostrarCrear, setMostrarCrear] = useState(false)
   const [nuevoEj, setNuevoEj] = useState({ nombre: '', grupoMuscular: GRUPOS[0] })
-  const [cargando, setCargando] = useState(false)
+  const [cargando, setCargando] = useState(true)
 
   useEffect(() => {
-    setCargando(true)
-    entrenamientoApi.buscarEjercicios(query, query ? '' : grupo)
-      .then(setEjercicios)
+    entrenamientoApi.buscarEjercicios('', '')
+      .then(setTodos)
       .finally(() => setCargando(false))
-  }, [grupo, query])
+  }, [])
+
+  const filtrados = todos.filter(ej => {
+    const matchQuery = !query || ej.nombre.toLowerCase().includes(query.toLowerCase())
+    const matchGrupo = query ? true : ej.grupoMuscular === grupo
+    return matchQuery && matchGrupo
+  })
 
   const crearPersonalizado = async () => {
     if (!nuevoEj.nombre.trim()) return
     const ej = await entrenamientoApi.crearEjercicioPersonalizado(nuevoEj)
+    setTodos(prev => [...prev, ej])
     onSeleccionar(ej)
   }
 
@@ -61,13 +67,13 @@ function BuscadorEjercicios({ onSeleccionar, onCerrar }) {
 
         <div className="ej-list">
           {cargando && <p className="text-muted small">Cargando...</p>}
-          {!cargando && ejercicios.map(ej => (
+          {!cargando && filtrados.map(ej => (
             <button key={ej.id} className="ej-item" onClick={() => onSeleccionar(ej)}>
               <span className="ej-nombre">{ej.nombre}</span>
               <span className="chip chip-xs">{ej.grupoMuscular}</span>
             </button>
           ))}
-          {!cargando && ejercicios.length === 0 && (
+          {!cargando && filtrados.length === 0 && (
             <p className="text-muted small">No se encontraron ejercicios</p>
           )}
         </div>
@@ -219,6 +225,8 @@ function TabRutinas() {
   const [racha, setRacha] = useState(0)
   const [cargando, setCargando] = useState(true)
   const [modalAbierto, setModalAbierto] = useState(false)
+  const [activando, setActivando] = useState(null)
+  const [toast, setToast] = useState('')
 
   useEffect(() => {
     Promise.all([
@@ -241,6 +249,20 @@ function TabRutinas() {
     setRutinas(prev => prev.filter(r => r.id !== id))
   }
 
+  const activar = async (rutinaId) => {
+    setActivando(rutinaId)
+    try {
+      const res = await entrenamientoApi.activarRutina(rutinaId)
+      setToast(`Rutina activada. ${res.diasAsignados} día${res.diasAsignados !== 1 ? 's' : ''} asignado${res.diasAsignados !== 1 ? 's' : ''} al calendario.`)
+      setTimeout(() => setToast(''), 4000)
+    } catch (e) {
+      setToast('Error al activar la rutina')
+      setTimeout(() => setToast(''), 3000)
+    } finally {
+      setActivando(null)
+    }
+  }
+
   const iniciarSesion = async (diaId) => {
     const sesion = await entrenamientoApi.iniciarSesion({ rutinaDiaId: diaId })
     navigate(`/dashboard/entrenamientos/sesion/${sesion.id}`)
@@ -250,6 +272,10 @@ function TabRutinas() {
 
   return (
     <div>
+      {toast && (
+        <div className="toast-msg">{toast}</div>
+      )}
+
       <div className="scoreboard" style={{ marginBottom: 24 }}>
         <div className="scoreboard-cell">
           <div className="scoreboard-label">Rutinas creadas</div>
@@ -279,16 +305,30 @@ function TabRutinas() {
               </div>
               <div className="rutina-dias-chips">
                 {rutina.dias.map(d => (
-                  <span key={d.id} className="chip chip-sm">{d.nombre}</span>
+                  <span key={d.id} className="chip chip-sm">
+                    {d.nombre}
+                    {d.diaSemana != null && (
+                      <span className="chip-dia-label">{DIAS_SEMANA[d.diaSemana - 1]}</span>
+                    )}
+                  </span>
                 ))}
               </div>
               <div className="rutina-card-actions">
                 <button className="btn btn-ghost small" onClick={() => navigate(`/dashboard/entrenamientos/rutina/${rutina.id}`)}>
                   Editar
                 </button>
+                {rutina.dias.some(d => d.diaSemana != null) && (
+                  <button
+                    className="btn btn-secondary small"
+                    onClick={() => activar(rutina.id)}
+                    disabled={activando === rutina.id}
+                  >
+                    {activando === rutina.id ? '...' : 'Activar'}
+                  </button>
+                )}
                 {rutina.dias.length > 0 && (
                   <button className="btn btn-primary small" onClick={() => iniciarSesion(rutina.dias[0].id)}>
-                    Empezar sesión
+                    Entrenar
                   </button>
                 )}
                 <button className="btn btn-danger small" onClick={() => eliminar(rutina.id)}>✕</button>
@@ -308,9 +348,7 @@ function TabRutinas() {
 // ─── TabCalendario ─────────────────────────────────────────────────────────────
 
 function TabCalendario() {
-  const navigate = useNavigate()
   const [calendario, setCalendario] = useState([])
-  const [overrides, setOverrides] = useState([])
   const [rutinas, setRutinas] = useState([])
   const [cargando, setCargando] = useState(true)
   const [editandoDia, setEditandoDia] = useState(null)
@@ -318,17 +356,14 @@ function TabCalendario() {
   useEffect(() => {
     Promise.all([
       entrenamientoApi.obtenerCalendario(),
-      entrenamientoApi.obtenerOverridesSemana(),
       entrenamientoApi.obtenerRutinas(),
-    ]).then(([cal, ov, rut]) => {
+    ]).then(([cal, rut]) => {
       setCalendario(cal)
-      setOverrides(ov)
       setRutinas(rut)
     }).finally(() => setCargando(false))
   }, [])
 
   const getDia = (numDia) => calendario.find(c => c.diaSemana === numDia)
-  const getOverride = (numDia) => overrides.find(o => o.diaSemana === numDia)
 
   const asignarDia = async (diaSemana, rutinaDiaId, rutinaId) => {
     const entrada = await entrenamientoApi.asignarDiaCalendario(diaSemana, { rutinaDiaId, rutinaId })
@@ -345,56 +380,54 @@ function TabCalendario() {
     setEditandoDia(null)
   }
 
-  const toggleOverrideDescanso = async (diaSemana) => {
-    const existing = getOverride(diaSemana)
-    if (existing && existing.rutinaDiaId === null) {
-      await entrenamientoApi.eliminarOverride({ diaSemana })
-      setOverrides(prev => prev.filter(o => o.diaSemana !== diaSemana))
-    } else {
-      const ov = await entrenamientoApi.crearOverride({ diaSemana, rutinaDiaId: null })
-      setOverrides(prev => [...prev.filter(o => o.diaSemana !== diaSemana), ov])
-    }
-  }
-
-  const asignarOverride = async (diaSemana, rutinaDiaId, rutinaId) => {
-    const ov = await entrenamientoApi.crearOverride({ diaSemana, rutinaDiaId, rutinaId })
-    setOverrides(prev => [...prev.filter(o => o.diaSemana !== diaSemana), ov])
-    setEditandoDia(null)
-  }
-
   if (cargando) return <p className="text-muted">Cargando calendario...</p>
+
+  const tieneRutinas = rutinas.length > 0
 
   return (
     <div>
-      <div className="panel" style={{ marginBottom: 24 }}>
+      <div className="panel">
         <div className="panel-head">
-          <h2 className="panel-title">Schedule semanal recurrente</h2>
-          <span className="panel-note">Clic en un día para asignar</span>
+          <h2 className="panel-title">Tu semana</h2>
+          <span className="panel-note">Tap en un día para asignar o cambiar</span>
         </div>
+
+        {!tieneRutinas && (
+          <p className="text-muted small" style={{ marginBottom: 16 }}>
+            Primero creá una rutina en "Mis Rutinas" para poder asignarla al calendario.
+          </p>
+        )}
+
         <div className="calendario-grid">
           {DIAS_SEMANA.map((nombre, i) => {
             const numDia = i + 1
             const entrada = getDia(numDia)
-            const override = getOverride(numDia)
-            const esDescansoPorOverride = override && !override.rutinaDiaId
-            const diaActivo = override?.rutinaDia || entrada?.rutinaDia
+            const rutinaDia = entrada?.rutinaDia
 
             return (
               <div
                 key={numDia}
-                className={`cal-cell${diaActivo ? ' cal-cell-activo' : ''}${esDescansoPorOverride ? ' cal-cell-descanso' : ''}`}
-                onClick={() => setEditandoDia(editandoDia === numDia ? null : numDia)}
+                className={`cal-cell${rutinaDia ? ' cal-cell-activo' : ''}`}
+                onClick={() => tieneRutinas && setEditandoDia(editandoDia === numDia ? null : numDia)}
+                style={{ cursor: tieneRutinas ? 'pointer' : 'default' }}
               >
                 <div className="cal-dia-nombre">{nombre}</div>
                 <div className="cal-dia-rutina">
-                  {esDescansoPorOverride
-                    ? <span className="text-muted small">Descanso (esta semana)</span>
-                    : diaActivo
-                      ? <span className="cal-rutina-nombre">{diaActivo.nombre}</span>
-                      : <span className="text-muted small">Libre</span>
+                  {rutinaDia
+                    ? <>
+                        <span className="cal-rutina-nombre">{rutinaDia.nombre}</span>
+                        <span className="cal-rutina-sub">{entrada.rutina?.nombre}</span>
+                      </>
+                    : <span className="text-muted small">Descanso</span>
                   }
                 </div>
-                {override && <span className="cal-override-badge">override</span>}
+                {rutinaDia && (
+                  <button
+                    className="cal-clear-btn"
+                    onClick={e => { e.stopPropagation(); limpiarDia(numDia) }}
+                    title="Quitar asignación"
+                  >×</button>
+                )}
               </div>
             )
           })}
@@ -402,7 +435,9 @@ function TabCalendario() {
 
         {editandoDia && (
           <div className="cal-editor">
-            <p className="modal-label">Asignar {DIAS_SEMANA[editandoDia - 1]} (recurrente)</p>
+            <p className="modal-label">
+              Asignar {DIAS_SEMANA[editandoDia - 1]}
+            </p>
             <div className="cal-dia-opciones">
               {rutinas.map(rutina =>
                 rutina.dias.map(dia => (
@@ -416,43 +451,24 @@ function TabCalendario() {
                   </button>
                 ))
               )}
-              <button className="cal-opcion cal-opcion-limpiar" onClick={() => limpiarDia(editandoDia)}>
-                Quitar asignación
-              </button>
+              {getDia(editandoDia) && (
+                <button className="cal-opcion cal-opcion-limpiar" onClick={() => limpiarDia(editandoDia)}>
+                  Quitar asignación (Descanso)
+                </button>
+              )}
             </div>
           </div>
         )}
       </div>
 
-      <div className="panel">
+      <div className="panel" style={{ marginTop: 16 }}>
         <div className="panel-head">
-          <h2 className="panel-title">Overrides de esta semana</h2>
-          <span className="panel-note">Solo afectan la semana actual</span>
+          <h2 className="panel-title">Activar una rutina</h2>
+          <span className="panel-note">Aplica el preset de días de la rutina al calendario</span>
         </div>
-        <div className="override-grid">
-          {DIAS_SEMANA.map((nombre, i) => {
-            const numDia = i + 1
-            const override = getOverride(numDia)
-            return (
-              <div key={numDia} className="override-cell">
-                <span className="override-dia">{nombre}</span>
-                {override
-                  ? <span className={`chip chip-xs${!override.rutinaDiaId ? ' chip-active' : ''}`}>
-                    {override.rutinaDia?.nombre || 'Descanso'}
-                  </span>
-                  : <span className="text-muted small">—</span>
-                }
-                <button
-                  className="btn btn-ghost small"
-                  onClick={() => toggleOverrideDescanso(numDia)}
-                  title={override ? 'Quitar override' : 'Marcar descanso esta semana'}
-                >
-                  {override && !override.rutinaDiaId ? 'Quitar' : 'Descanso'}
-                </button>
-              </div>
-            )
-          })}
-        </div>
+        <p className="text-muted small" style={{ marginBottom: 12 }}>
+          Si asignás días de semana a cada día de una rutina (en el editor), podés activarla desde "Mis Rutinas" y el calendario se actualiza automáticamente.
+        </p>
       </div>
     </div>
   )
