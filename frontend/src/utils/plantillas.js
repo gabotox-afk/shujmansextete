@@ -1,3 +1,14 @@
+/**
+ * @fileoverview Plantillas de rutinas predefinidas agrupadas por cantidad de días semanales.
+ * Cada plantilla incluye un `key` único, un nombre descriptivo y la lista de días con sus nombres.
+ * Son usadas en el Wizard de creación de rutinas para generar estructuras estándar de entrenamiento
+ * (Full Body, Push/Pull/Legs, Upper/Lower, Arnold Split, etc.) de forma automática.
+ */
+
+/**
+ * Mapa de plantillas de rutinas indexado por número de días de entrenamiento por semana (1–6).
+ * @type {Object.<number, Array<{ key: string, nombre: string, dias: Array<{ nombre: string }> }>>}
+ */
 export const PLANTILLAS_POR_DIAS = {
   1: [{ key: '1-fullbody', nombre: 'Full Body', dias: [{ nombre: 'Full Body' }] }],
   2: [

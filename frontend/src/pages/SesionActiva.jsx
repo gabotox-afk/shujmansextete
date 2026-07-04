@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Página de sesión de entrenamiento activa.
+ * Carga una sesión existente por `id` desde la URL, muestra los ejercicios del día
+ * de rutina asociado y permite registrar series en tiempo real (reps, peso, RIR).
+ * Incluye un cronómetro, soporte para agregar ejercicios extra y un modal de finalización.
+ * Contiene los sub-componentes internos:
+ * - `Timer` – cronómetro en tiempo real desde el inicio de la sesión
+ * - `BuscadorEjercicios` – modal para agregar ejercicios fuera de la rutina planificada
+ * - `EjercicioCard` – tarjeta de ejercicio con tabla de series editable inline
+ */
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { entrenamientoApi } from '../api/entrenamiento'
@@ -6,6 +16,17 @@ const GRUPOS = ['pecho', 'espalda', 'hombros', 'biceps', 'triceps', 'cuadriceps'
 
 // ─── Timer ─────────────────────────────────────────────────────────────────────
 
+/**
+ * Cronómetro en tiempo real que muestra el tiempo transcurrido desde el inicio de la sesión.
+ * Se actualiza cada segundo usando `setInterval`.
+ *
+ * @param {Object} props
+ * @param {string | Date} props.inicio - Timestamp ISO o Date del inicio de la sesión
+ * @returns {JSX.Element} Un `<span>` con formato `MM:SS` o `H:MM:SS`
+ *
+ * @example
+ * <Timer inicio={sesion.fecha} />
+ */
 function Timer({ inicio }) {
   const [elapsed, setElapsed] = useState(0)
 
@@ -28,6 +49,23 @@ function Timer({ inicio }) {
 
 // ─── BuscadorEjercicios ────────────────────────────────────────────────────────
 
+/**
+ * Modal de búsqueda de ejercicios para agregar extras durante la sesión.
+ * Permite filtrar por grupo muscular o nombre libre.
+ * A diferencia del `BuscadorEjercicios` del editor, este no incluye creación de ejercicios personalizados.
+ *
+ * @param {Object} props
+ * @param {(ejercicio: { id: number, nombre: string, grupoMuscular: string }) => void} props.onSeleccionar
+ *   Callback ejecutado al seleccionar un ejercicio
+ * @param {() => void} props.onCerrar - Cierra el modal
+ * @returns {JSX.Element}
+ *
+ * @example
+ * <BuscadorEjercicios
+ *   onSeleccionar={(ej) => agregarEjercicioExtra(ej)}
+ *   onCerrar={() => setBuscadorAbierto(false)}
+ * />
+ */
 function BuscadorEjercicios({ onSeleccionar, onCerrar }) {
   const [grupo, setGrupo] = useState(GRUPOS[0])
   const [query, setQuery] = useState('')
@@ -75,6 +113,32 @@ function BuscadorEjercicios({ onSeleccionar, onCerrar }) {
 
 // ─── EjercicioCard ─────────────────────────────────────────────────────────────
 
+/**
+ * Tarjeta de ejercicio durante una sesión activa.
+ * Muestra las series ya registradas en una tabla editable inline (reps, kg, RIR),
+ * el historial de la última sesión como referencia y un formulario para registrar nuevas series.
+ * Soporta el modo cardio (sin campos de peso ni RIR, solo minutos).
+ *
+ * @param {Object} props
+ * @param {string} props.sesionId - ID de la sesión activa
+ * @param {{ id: number, nombre: string, grupoMuscular: string }} props.ejercicio - Ejercicio a registrar
+ * @param {{ seriesObj: number, repsObj: string, rirObj: number|null } | null} props.objetivo
+ *   Objetivos del ejercicio según la rutina planificada. `null` para ejercicios extra
+ * @param {Array<{ id: number, reps: number, pesoKg: number, rir: number|null }>} props.seriesIniciales
+ *   Series ya registradas al cargar la sesión
+ * @param {Array<{ reps: number, pesoKg: number, rir: number|null }>} props.historial
+ *   Series de la última sesión donde se hizo este ejercicio, para mostrar como referencia
+ * @returns {JSX.Element}
+ *
+ * @example
+ * <EjercicioCard
+ *   sesionId={sesionId}
+ *   ejercicio={ejSlot.ejercicio}
+ *   objetivo={{ seriesObj: 4, repsObj: '8-10', rirObj: 2 }}
+ *   seriesIniciales={seriesPorEj[ejSlot.ejercicioId] || []}
+ *   historial={historialPorEj[ejSlot.ejercicioId] || []}
+ * />
+ */
 function EjercicioCard({ sesionId, ejercicio, objetivo, seriesIniciales, historial }) {
   const esCardio = ejercicio.grupoMuscular === 'cardio'
   const [series, setSeries] = useState(seriesIniciales || [])
@@ -235,6 +299,18 @@ function EjercicioCard({ sesionId, ejercicio, objetivo, seriesIniciales, histori
 
 // ─── Página ────────────────────────────────────────────────────────────────────
 
+/**
+ * Página de sesión de entrenamiento activa.
+ * Carga los datos de la sesión por `id` desde la URL, el historial previo de cada ejercicio
+ * y orquesta el registro de series en tiempo real.
+ *
+ * @component
+ * @returns {JSX.Element}
+ *
+ * @example
+ * // Registrada como ruta hija del dashboard:
+ * <Route path="entrenamientos/sesion/:id" element={<SesionActiva />} />
+ */
 export default function SesionActiva() {
   const { id } = useParams()
   const navigate = useNavigate()

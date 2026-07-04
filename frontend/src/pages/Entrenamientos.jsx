@@ -1,3 +1,10 @@
+/**
+ * @fileoverview Página principal del módulo de entrenamientos.
+ * Organizada en tres pestañas: "Hoy" (día asignado del calendario),
+ * "Mis Rutinas" (listado y creación mediante Wizard o templates) e "Historial" (sesiones pasadas).
+ * Se conecta con `entrenamientoApi` para todas las operaciones CRUD y navega a
+ * `RutinaEditor` y `SesionActiva` para flujos de edición y entrenamiento activo.
+ */
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { entrenamientoApi } from '../api/entrenamiento'

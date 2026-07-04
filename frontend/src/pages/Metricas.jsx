@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Página de métricas corporales y de rendimiento del usuario.
+ * Organizada en tres pestañas: "Evolución de Peso" (gráfico de línea con historial de pesajes),
+ * "Progreso de Fuerza" (evolución del peso levantado por ejercicio) y "Sesiones" (resumen de volumen
+ * y récords por sesión completada). Utiliza la librería `recharts` para los gráficos interactivos.
+ */
 import { useState, useEffect, useRef } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import {

@@ -33,3 +33,12 @@ Para garantizar la escalabilidad y el mantenimiento a largo plazo:
 *   Se modularizó el archivo monolítico `index.css` de más de 1800 líneas.
 *   Se distribuyó la lógica visual en 7 archivos CSS atómicos dentro de `/styles/`: `base.css`, `utilities.css`, `landing.css`, `auth.css`, `dashboard.css`, `components.css` y `dieta.css`.
 *   El punto de entrada principal ahora utiliza `@import` modulares, manteniendo la compatibilidad de compilación con Vite intacta.
+
+---
+
+## 6. Módulo de Rutinas y Entrenamiento
+Se agregó el sistema completo para gestionar entrenamientos físicos:
+*   **Creación de Rutinas:** Ahora es posible armar rutinas personalizadas desde cero o usar plantillas prearmadas (ej. rutinas de 3, 4 o 5 días).
+*   **Gestión de Ejercicios:** Permite buscar ejercicios del catálogo, crear ejercicios propios y asignarlos a diferentes días de la semana.
+*   **Control de Progreso:** Se puede registrar el progreso en tiempo real durante cada sesión de entrenamiento, guardando las repeticiones, los kilos levantados, y las series de cada ejercicio para ver la evolución a lo largo del tiempo.
+

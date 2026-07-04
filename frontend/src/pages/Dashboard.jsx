@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Página de inicio del dashboard (panel principal).
+ * Muestra un saludo personalizado, el resumen nutricional del día,
+ * el día de entrenamiento asignado para hoy (si hay rutina activa) y accesos rápidos
+ * a las secciones de dieta, entrenamiento y métricas.
+ */
 import { useState, useEffect } from 'react'
 import { useOutletContext, useNavigate } from 'react-router-dom'
 import { calcularMacros, OBJETIVO_LABEL } from '../utils/macros'

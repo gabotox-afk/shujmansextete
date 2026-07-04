@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Editor de rutinas de entrenamiento.
+ * Permite al usuario configurar una rutina existente: renombrarla, agregar/eliminar días,
+ * asignar cada día a un día de la semana (para el calendario), agregar ejercicios por día
+ * con parámetros de series/reps/RIR, reordenarlos con drag & drop, e iniciar una sesión activa.
+ * Contiene los sub-componentes internos:
+ * - `BuscadorEjercicios` – modal de búsqueda y creación de ejercicios
+ * - `EjercicioRow` – fila de ejercicio con edición inline y drag & drop
+ * - `DiaEditor` – panel de edición de un día de rutina
+ */
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { entrenamientoApi } from '../api/entrenamiento'
@@ -7,6 +17,23 @@ const DIAS_SEMANA_LABELS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
 
 // ─── BuscadorEjercicios ────────────────────────────────────────────────────────
 
+/**
+ * Modal de búsqueda y selección de ejercicios del catálogo.
+ * Permite filtrar por grupo muscular o nombre. Incluye un formulario
+ * para crear ejercicios personalizados si no se encuentran en el catálogo.
+ *
+ * @param {Object} props
+ * @param {(ejercicio: { id: number, nombre: string, grupoMuscular: string }) => void} props.onSeleccionar
+ *   Callback ejecutado al hacer clic en un ejercicio de la lista
+ * @param {() => void} props.onCerrar - Callback para cerrar el modal
+ * @returns {JSX.Element}
+ *
+ * @example
+ * <BuscadorEjercicios
+ *   onSeleccionar={(ej) => agregarEjercicio(ej)}
+ *   onCerrar={() => setBuscadorAbierto(false)}
+ * />
+ */
 function BuscadorEjercicios({ onSeleccionar, onCerrar }) {
   const [grupo, setGrupo] = useState(GRUPOS[0])
   const [query, setQuery] = useState('')
@@ -103,6 +130,25 @@ function BuscadorEjercicios({ onSeleccionar, onCerrar }) {
 
 // ─── EjercicioRow ──────────────────────────────────────────────────────────────
 
+/**
+ * Fila de ejercicio dentro del editor de día de rutina.
+ * Muestra el nombre y grupo muscular del ejercicio, campos de edición inline
+ * (series, reps, RIR) con guardado automático con debounce de 600 ms,
+ * y soporte de drag & drop para reordenar.
+ *
+ * @param {Object} props
+ * @param {number} props.rutinaId - ID de la rutina padre
+ * @param {number} props.diaId - ID del día de rutina que contiene este ejercicio
+ * @param {{ id: number, seriesObj: number, repsObj: string, rirObj: number|null, ejercicio: { nombre: string, grupoMuscular: string } }} props.ejSlot
+ *   Datos del slot del ejercicio (incluyendo el ejercicio base anidado)
+ * @param {(actualizado: Object) => void} props.onActualizado - Callback tras guardar cambios
+ * @param {(ejId: number) => void} props.onEliminado - Callback tras eliminar el ejercicio
+ * @param {(index: number) => void} props.onDragStart - Notifica el inicio del arrastre
+ * @param {(index: number) => void} props.onDragOver - Notifica sobre qué índice se está arrastrando
+ * @param {() => void} props.onDrop - Ejecuta el reordenamiento al soltar
+ * @param {number} props.index - Índice de posición actual en la lista
+ * @returns {JSX.Element}
+ */
 function EjercicioRow({ rutinaId, diaId, ejSlot, onActualizado, onEliminado, onDragStart, onDragOver, onDrop, index }) {
   const esCardio = ejSlot.ejercicio.grupoMuscular === 'cardio'
   const [editando, setEditando] = useState({
@@ -201,6 +247,20 @@ function EjercicioRow({ rutinaId, diaId, ejSlot, onActualizado, onEliminado, onD
 
 // ─── DiaEditor ─────────────────────────────────────────────────────────────────
 
+/**
+ * Panel de edición de un día de rutina.
+ * Muestra la lista de ejercicios del día con soporte de drag & drop
+ * y permite agregar nuevos ejercicios mediante el `BuscadorEjercicios`.
+ *
+ * @param {Object} props
+ * @param {{ id: number, nombre: string }} props.rutina - Datos básicos de la rutina padre
+ * @param {{ id: number, nombre: string, ejercicios: Array }} props.dia - Datos del día a editar
+ * @param {() => void} props.onActualizado - Callback tras cualquier actualización en el día
+ * @returns {JSX.Element}
+ *
+ * @example
+ * <DiaEditor rutina={rutina} dia={dias[diaActivo]} onActualizado={() => {}} />
+ */
 function DiaEditor({ rutina, dia, onActualizado }) {
   const [buscadorAbierto, setBuscadorAbierto] = useState(false)
   const [ejercicios, setEjercicios] = useState(dia.ejercicios || [])
@@ -298,6 +358,18 @@ function DiaEditor({ rutina, dia, onActualizado }) {
 
 // ─── Página ────────────────────────────────────────────────────────────────────
 
+/**
+ * Página de edición de una rutina individual.
+ * Carga la rutina por `id` desde la URL, permite editar el nombre inline,
+ * gestionar días (agregar/eliminar/asignar a día de semana) e iniciar una sesión activa.
+ *
+ * @component
+ * @returns {JSX.Element}
+ *
+ * @example
+ * // Registrada como ruta hija del dashboard:
+ * <Route path="rutinas/:id" element={<RutinaEditor />} />
+ */
 export default function RutinaEditor() {
   const { id } = useParams()
   const navigate = useNavigate()

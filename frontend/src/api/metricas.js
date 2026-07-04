@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Módulo de API para el módulo de métricas corporales y de rendimiento.
+ * Expone funciones para registrar y consultar el historial de peso, el progreso
+ * de fuerza por ejercicio y el resumen de sesiones de entrenamiento completadas.
+ * Todas las funciones requieren autenticación (token JWT en Authorization header).
+ */
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1'
 const BASE = `${API_URL}/metricas`
 
