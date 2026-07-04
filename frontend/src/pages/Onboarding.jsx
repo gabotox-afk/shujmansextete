@@ -59,9 +59,9 @@ export default function Onboarding() {
       const edad = Number(form.edad)
       const peso = Number(form.peso)
       const altura = Number(form.altura)
-      if (!form.edad || edad <= 0 || edad > 100) e.edad = 'Ingresá una edad válida'
-      if (!form.peso || peso <= 0) e.peso = 'Ingresá un peso válido (kg)'
-      if (!form.altura || altura <= 0) e.altura = 'Ingresá una altura válida (cm)'
+      if (!form.edad || edad < 10 || edad > 100) e.edad = 'Ingresá una edad válida (10–100 años)'
+      if (!form.peso || peso < 30 || peso > 400) e.peso = 'Ingresá un peso válido (30–400 kg)'
+      if (!form.altura || altura < 100 || altura > 250) e.altura = 'Ingresá una altura válida (100–250 cm)'
       if (!form.sexo) e.sexo = 'Seleccioná una opción'
     }
     if (s === 1 && form.actividadFisica === '') e.actividadFisica = 'Seleccioná una opción'

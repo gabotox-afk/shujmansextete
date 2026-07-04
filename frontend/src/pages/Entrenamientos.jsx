@@ -223,6 +223,7 @@ function TabRutinas() {
   const navigate = useNavigate()
   const [rutinas, setRutinas] = useState([])
   const [racha, setRacha] = useState(0)
+  const [rutinaActivaId, setRutinaActivaId] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [modalAbierto, setModalAbierto] = useState(false)
   const [activando, setActivando] = useState(null)
@@ -232,9 +233,12 @@ function TabRutinas() {
     Promise.all([
       entrenamientoApi.obtenerRutinas(),
       entrenamientoApi.obtenerRacha(),
-    ]).then(([r, rc]) => {
+      entrenamientoApi.obtenerCalendario(),
+    ]).then(([r, rc, cal]) => {
       setRutinas(r)
       setRacha(rc)
+      const activa = cal.find(c => c.rutinaId)
+      setRutinaActivaId(activa?.rutinaId ?? null)
     }).finally(() => setCargando(false))
   }, [])
 
@@ -253,6 +257,7 @@ function TabRutinas() {
     setActivando(rutinaId)
     try {
       const res = await entrenamientoApi.activarRutina(rutinaId)
+      setRutinaActivaId(rutinaId)
       setToast(`Rutina activada. ${res.diasAsignados} día${res.diasAsignados !== 1 ? 's' : ''} asignado${res.diasAsignados !== 1 ? 's' : ''} al calendario.`)
       setTimeout(() => setToast(''), 4000)
     } catch (e) {
@@ -319,11 +324,11 @@ function TabRutinas() {
                 </button>
                 {rutina.dias.some(d => d.diaSemana != null) && (
                   <button
-                    className="btn btn-secondary small"
+                    className={`btn small ${rutina.id === rutinaActivaId ? 'btn-primary' : 'btn-secondary'}`}
                     onClick={() => activar(rutina.id)}
                     disabled={activando === rutina.id}
                   >
-                    {activando === rutina.id ? '...' : 'Activar'}
+                    {activando === rutina.id ? '...' : rutina.id === rutinaActivaId ? 'Activa ✓' : 'Activar'}
                   </button>
                 )}
                 {rutina.dias.length > 0 && (
