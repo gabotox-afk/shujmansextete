@@ -1,128 +1,385 @@
-/**
- * @fileoverview Página de métricas corporales dentro del dashboard.
- * Calcula y muestra el IMC, gasto energético estimado y los datos del perfil
- * físico del usuario. Incluye el sub-componente privado `Dato`.
- */
-
+import { useState, useEffect, useRef } from 'react'
 import { useOutletContext } from 'react-router-dom'
-import { calcularMacros } from '../utils/macros'
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, ReferenceLine,
+} from 'recharts'
+import { metricasApi } from '../api/metricas'
 
-/**
- * Página de métricas corporales del dashboard.
- * Obtiene el usuario del contexto de `DashboardLayout` y calcula:
- * - **IMC** (índice de masa corporal) con la fórmula peso / (altura_m)²
- * - **Categoría IMC** (bajo peso / saludable / sobrepeso / obesidad)
- * - **Macros y calorías objetivo** mediante `calcularMacros()`
- *
- * @component
- * @returns {JSX.Element}
- *
- * @example
- * // Registrada como ruta hija del dashboard:
- * <Route path="metricas" element={<Metricas />} />
- */
+// ─── Constantes ────────────────────────────────────────────────────────────────
+
+const PERIODOS = [
+  { label: '1M', meses: 1 },
+  { label: '3M', meses: 3 },
+  { label: '6M', meses: 6 },
+  { label: '1A', meses: 12 },
+  { label: 'TODO', meses: null },
+]
+
+const GOLD = '#D4AF37'
+const GRID  = 'rgba(255,255,255,0.06)'
+const TICK  = 'rgba(255,255,255,0.32)'
+
+function getDesde(label) {
+  const p = PERIODOS.find(x => x.label === label)
+  if (!p?.meses) return null
+  const d = new Date()
+  d.setMonth(d.getMonth() - p.meses)
+  return d.toISOString()
+}
+
+function formatFecha(iso) {
+  const d = new Date(iso + 'T12:00:00')
+  return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })
+}
+
+// ─── Tooltip custom ─────────────────────────────────────────────────────────────
+
+function ChartTooltip({ active, payload, label, unidad = 'kg' }) {
+  if (!active || !payload?.length) return null
+  return (
+    <div className="metricas-tooltip">
+      <span className="tooltip-fecha">{label}</span>
+      <span className="tooltip-valor">{payload[0].value} {unidad}</span>
+    </div>
+  )
+}
+
+// ─── Selector de ejercicio ─────────────────────────────────────────────────────
+
+function SelectorEjercicio({ ejercicios, seleccionado, onSeleccionar }) {
+  const [abierto, setAbierto] = useState(false)
+  const [query, setQuery] = useState('')
+  const ref = useRef(null)
+
+  useEffect(() => {
+    const handler = (e) => { if (!ref.current?.contains(e.target)) setAbierto(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const filtrados = ejercicios.filter(e =>
+    !query || e.nombre.toLowerCase().includes(query.toLowerCase())
+  )
+
+  const selNombre = seleccionado
+    ? ejercicios.find(e => e.id === seleccionado)?.nombre
+    : ''
+
+  return (
+    <div className="metricas-ej-selector" ref={ref}>
+      <input
+        className="input"
+        placeholder="Buscar ejercicio..."
+        value={abierto ? query : selNombre}
+        onFocus={() => { setAbierto(true); setQuery('') }}
+        onChange={e => setQuery(e.target.value)}
+        readOnly={!abierto}
+        style={{ cursor: 'pointer' }}
+      />
+      {abierto && (
+        <div className="metricas-ej-dropdown">
+          {filtrados.length === 0 && (
+            <div style={{ padding: '10px 12px', color: TICK, fontSize: '0.82rem' }}>Sin resultados</div>
+          )}
+          {filtrados.map(ej => (
+            <button
+              key={ej.id}
+              className="metricas-ej-item"
+              onClick={() => { onSeleccionar(ej.id); setAbierto(false); setQuery('') }}
+            >
+              <span>{ej.nombre}</span>
+              <span className="chip chip-xs">{ej.grupoMuscular}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Panel genérico con gráfico ────────────────────────────────────────────────
+
+function ChartPanel({ titulo, children, head }) {
+  return (
+    <div className="metricas-chart-panel">
+      <div className="metricas-chart-head">
+        <h2 className="metricas-chart-title">{titulo}</h2>
+        {head}
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function EmptyState({ icon, mensaje, sub }) {
+  return (
+    <div className="metricas-empty">
+      <div className="metricas-empty-icon">{icon}</div>
+      <p><strong>{mensaje}</strong></p>
+      {sub && <p style={{ fontSize: '0.8rem', opacity: 0.7 }}>{sub}</p>}
+    </div>
+  )
+}
+
+// ─── Página principal ──────────────────────────────────────────────────────────
+
 export default function Metricas() {
   const { usuario } = useOutletContext()
-  const macros = calcularMacros(usuario)
-  const imc = usuario.peso && usuario.altura
-    ? usuario.peso / Math.pow(usuario.altura / 100, 2)
-    : null
 
-  /**
-   * Devuelve la categoría de IMC según los rangos de la OMS.
-   *
-   * @param {number} valor - Valor numérico del IMC calculado
-   * @returns {'Bajo peso' | 'Saludable' | 'Sobrepeso' | 'Obesidad'}
-   *
-   * @example
-   * imcCategoria(17.5) // 'Bajo peso'
-   * imcCategoria(22)   // 'Saludable'
-   * imcCategoria(27)   // 'Sobrepeso'
-   * imcCategoria(32)   // 'Obesidad'
-   */
-  const imcCategoria = (valor) => {
-    if (valor < 18.5) return 'Bajo peso'
-    if (valor < 25)   return 'Saludable'
-    if (valor < 30)   return 'Sobrepeso'
-    return 'Obesidad'
+  const [periodo, setPeriodo] = useState('3M')
+  const [historialPeso, setHistorialPeso] = useState([])
+  const [ejercicios, setEjercicios] = useState([])
+  const [ejercicioSel, setEjercicioSel] = useState(null)
+  const [fuerzaData, setFuerzaData] = useState([])
+  const [resumen, setResumen] = useState(null)
+  const [cargando, setCargando] = useState(true)
+  const [cargandoFuerza, setCargandoFuerza] = useState(false)
+
+  // Form de registro de peso
+  const [nuevoPeso, setNuevoPeso] = useState('')
+  const [nuevaFecha, setNuevaFecha] = useState(() => new Date().toISOString().slice(0, 10))
+  const [guardandoPeso, setGuardandoPeso] = useState(false)
+
+  const desde = getDesde(periodo)
+
+  // Carga inicial y cuando cambia el período
+  useEffect(() => {
+    setCargando(true)
+    Promise.all([
+      metricasApi.getHistorialPeso(),
+      metricasApi.getEjerciciosLogueados(),
+      metricasApi.getResumenSesiones(desde),
+    ]).then(([peso, ejs, res]) => {
+      setHistorialPeso(peso)
+      setEjercicios(ejs)
+      setResumen(res)
+    }).catch(() => {}).finally(() => setCargando(false))
+  }, [periodo])
+
+  // Cuando cambia el ejercicio o el período, recarga fuerza
+  useEffect(() => {
+    if (!ejercicioSel) { setFuerzaData([]); return }
+    setCargandoFuerza(true)
+    metricasApi.getProgresoPorEjercicio(ejercicioSel, desde)
+      .then(setFuerzaData)
+      .catch(() => setFuerzaData([]))
+      .finally(() => setCargandoFuerza(false))
+  }, [ejercicioSel, periodo])
+
+  const registrarPeso = async () => {
+    const kg = parseFloat(nuevoPeso)
+    if (!kg || kg < 20 || kg > 500) return
+    setGuardandoPeso(true)
+    try {
+      const reg = await metricasApi.registrarPeso({ pesoKg: kg, fecha: nuevaFecha })
+      setHistorialPeso(prev => {
+        const nuevo = [...prev, { id: reg.id, fecha: reg.fecha, pesoKg: reg.pesoKg }]
+        return nuevo.sort((a, b) => a.fecha.localeCompare(b.fecha))
+      })
+      setNuevoPeso('')
+    } finally {
+      setGuardandoPeso(false)
+    }
   }
+
+  // Filtrar peso por período
+  const pesoPeriodo = desde
+    ? historialPeso.filter(r => r.fecha >= desde.slice(0, 10))
+    : historialPeso
+
+  const pesoChartData = pesoPeriodo.map(r => ({
+    fecha: formatFecha(r.fecha),
+    pesoKg: r.pesoKg,
+  }))
+
+  const fuerzaChartData = fuerzaData.map(r => ({
+    fecha: formatFecha(r.fecha),
+    maxPesoKg: r.maxPesoKg,
+  }))
+
+  // Rango del eje Y para peso — un poco de margen
+  const pesoMin = pesoPeriodo.length ? Math.min(...pesoPeriodo.map(r => r.pesoKg)) - 2 : 'auto'
+  const pesoMax = pesoPeriodo.length ? Math.max(...pesoPeriodo.map(r => r.pesoKg)) + 2 : 'auto'
 
   return (
     <div>
       <div className="dash-eyebrow">Seguimiento</div>
       <h1 className="dash-title">Métricas</h1>
-      <p className="dash-sub">
-        Una foto de tu estado físico actual, calculada a partir de los datos de tu perfil.
-        Pronto vas a poder ver la evolución de estos números a lo largo del tiempo.
-      </p>
 
-      <div className="scoreboard">
-        <div className="scoreboard-cell">
-          <div className="scoreboard-label">Peso actual</div>
-          <div className="scoreboard-value">{usuario.peso}<span className="unit">kg</span></div>
-        </div>
-        <div className="scoreboard-cell">
-          <div className="scoreboard-label">Altura</div>
-          <div className="scoreboard-value">{usuario.altura}<span className="unit">cm</span></div>
-        </div>
-        <div className="scoreboard-cell">
-          <div className="scoreboard-label">IMC</div>
-          <div className="scoreboard-value gold">{imc?.toFixed(1)}</div>
-        </div>
-        <div className="scoreboard-cell">
-          <div className="scoreboard-label">Categoría IMC</div>
-          <div className="scoreboard-value" style={{ fontSize: '1.4rem' }}>{imc && imcCategoria(imc)}</div>
-        </div>
+      {/* Selector de período */}
+      <div className="metricas-periodo-bar">
+        {PERIODOS.map(p => (
+          <button
+            key={p.label}
+            className={`metricas-periodo-btn${periodo === p.label ? ' active' : ''}`}
+            onClick={() => setPeriodo(p.label)}
+          >
+            {p.label}
+          </button>
+        ))}
       </div>
 
-      <div className="profile-grid cols-2">
-        <div className="panel" style={{ marginBottom: 0 }}>
-          <div className="panel-head">
-            <h2 className="panel-title">Gasto energético</h2>
-            <span className="panel-note">Estimado</span>
+      {/* Stats del período */}
+      {resumen && (
+        <div className="metricas-stats">
+          <div className="scoreboard-cell">
+            <div className="scoreboard-label">Sesiones</div>
+            <div className="scoreboard-value">{resumen.sesionesTotales}</div>
           </div>
-          <div className="macro-list" style={{ gap: 16 }}>
-            <Dato label="Edad" valor={`${usuario.edad} años`} />
-            <Dato label="Sexo" valor={usuario.sexo === 'M' ? 'Masculino' : 'Femenino'} />
-            <Dato label="Días de actividad" valor={`${usuario.actividadFisica} por semana`} />
-            <Dato label="Calorías diarias objetivo" valor={`${macros?.calorias} kcal`} resaltado />
+          <div className="scoreboard-cell">
+            <div className="scoreboard-label">Duración promedio</div>
+            <div className="scoreboard-value">
+              {resumen.duracionPromedio != null ? resumen.duracionPromedio : '—'}
+              {resumen.duracionPromedio != null && <span className="unit">min</span>}
+            </div>
+          </div>
+          <div className="scoreboard-cell">
+            <div className="scoreboard-label">Peso actual</div>
+            <div className="scoreboard-value gold">
+              {usuario.peso}<span className="unit">kg</span>
+            </div>
           </div>
         </div>
+      )}
 
-        <div className="coming-soon" style={{ borderTop: 'none', marginTop: 0, padding: '8px 0' }}>
-          <span className="coming-soon-tag">Próximamente</span>
-          <h2 className="coming-soon-title" style={{ fontSize: '1.5rem' }}>Gráficos de evolución</h2>
-          <p className="coming-soon-desc">
-            Vamos a sumar gráficos de peso, volumen de entrenamiento y composición corporal
-            semana a semana, para que puedas ver tu progreso real con el tiempo —
-            no solo una foto del presente.
-          </p>
-        </div>
-      </div>
-    </div>
-  )
-}
+      {/* ── Panel: Peso corporal ── */}
+      <ChartPanel
+        titulo="Peso corporal"
+        head={
+          <div className="metricas-peso-form">
+            <input
+              type="number"
+              className="input"
+              placeholder="Kg"
+              value={nuevoPeso}
+              onChange={e => setNuevoPeso(e.target.value)}
+              min={20}
+              max={500}
+              step={0.1}
+              onKeyDown={e => e.key === 'Enter' && registrarPeso()}
+            />
+            <input
+              type="date"
+              className="input input-fecha"
+              value={nuevaFecha}
+              max={new Date().toISOString().slice(0, 10)}
+              onChange={e => setNuevaFecha(e.target.value)}
+            />
+            <button
+              className="btn btn-primary small"
+              onClick={registrarPeso}
+              disabled={guardandoPeso || !nuevoPeso}
+            >
+              {guardandoPeso ? '...' : '+ Registrar'}
+            </button>
+          </div>
+        }
+      >
+        {cargando ? (
+          <div className="metricas-empty"><p>Cargando...</p></div>
+        ) : pesoChartData.length === 0 ? (
+          <EmptyState
+            icon="⚖️"
+            mensaje="Sin registros de peso"
+            sub="Registrá tu peso arriba para ver tu evolución en el tiempo."
+          />
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={pesoChartData} margin={{ top: 4, right: 12, left: -10, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
+              <XAxis
+                dataKey="fecha"
+                tick={{ fill: TICK, fontSize: 11 }}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                domain={[pesoMin, pesoMax]}
+                tick={{ fill: TICK, fontSize: 11 }}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={v => `${v}kg`}
+              />
+              <Tooltip content={<ChartTooltip unidad="kg" />} />
+              {usuario.peso && (
+                <ReferenceLine
+                  y={usuario.peso}
+                  stroke={GOLD}
+                  strokeDasharray="4 4"
+                  strokeOpacity={0.3}
+                />
+              )}
+              <Line
+                type="monotone"
+                dataKey="pesoKg"
+                stroke={GOLD}
+                strokeWidth={2}
+                dot={{ fill: GOLD, r: 3, strokeWidth: 0 }}
+                activeDot={{ r: 5, fill: GOLD }}
+                name="Peso"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
+      </ChartPanel>
 
-/**
- * Fila de dato clave-valor para paneles de métricas.
- * Muestra una etiqueta en monospace y un valor formateado,
- * con opción de resaltado dorado para datos importantes.
- *
- * @param {Object} props
- * @param {string} props.label - Etiqueta descriptiva del dato (ej: "Peso", "Edad")
- * @param {string | number} props.valor - Valor a mostrar junto a la etiqueta
- * @param {boolean} [props.resaltado=false] - Si `true`, el valor se muestra en color dorado
- * @returns {JSX.Element}
- *
- * @example
- * <Dato label="Peso" valor="75 kg" />
- * <Dato label="Calorías objetivo" valor="2800 kcal" resaltado />
- */
-function Dato({ label, valor, resaltado }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--clr-border)', paddingBottom: 12 }}>
-      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.78rem', letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--clr-text-faint)' }}>{label}</span>
-      <span style={{ fontWeight: 600, color: resaltado ? 'var(--clr-primary)' : 'var(--clr-text)' }}>{valor}</span>
+      {/* ── Panel: Progreso de fuerza ── */}
+      <ChartPanel
+        titulo="Progreso de fuerza"
+        head={
+          <SelectorEjercicio
+            ejercicios={ejercicios}
+            seleccionado={ejercicioSel}
+            onSeleccionar={setEjercicioSel}
+          />
+        }
+      >
+        {!ejercicioSel ? (
+          <EmptyState
+            icon="🏋️"
+            mensaje="Seleccioná un ejercicio"
+            sub="Elegí un ejercicio del selector para ver cómo evolucionó tu fuerza."
+          />
+        ) : cargandoFuerza ? (
+          <div className="metricas-empty"><p>Cargando...</p></div>
+        ) : fuerzaChartData.length === 0 ? (
+          <EmptyState
+            icon="📊"
+            mensaje="Sin datos en este período"
+            sub="No registraste series de este ejercicio en el período seleccionado."
+          />
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={fuerzaChartData} margin={{ top: 4, right: 12, left: -10, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
+              <XAxis
+                dataKey="fecha"
+                tick={{ fill: TICK, fontSize: 11 }}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                domain={['auto', 'auto']}
+                tick={{ fill: TICK, fontSize: 11 }}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={v => `${v}kg`}
+              />
+              <Tooltip content={<ChartTooltip unidad="kg" />} />
+              <Line
+                type="monotone"
+                dataKey="maxPesoKg"
+                stroke={GOLD}
+                strokeWidth={2}
+                dot={{ fill: GOLD, r: 3, strokeWidth: 0 }}
+                activeDot={{ r: 5, fill: GOLD }}
+                name="Máximo"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
+      </ChartPanel>
     </div>
   )
 }

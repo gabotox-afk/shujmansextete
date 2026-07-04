@@ -1,0 +1,197 @@
+/* ─── Selector de período ──────────────────────────────────────────────────── */
+
+.metricas-periodo-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 28px;
+}
+
+.metricas-periodo-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--clr-border);
+  background: transparent;
+  color: var(--clr-text-faint);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.metricas-periodo-btn:hover {
+  border-color: var(--clr-primary);
+  color: var(--clr-primary);
+}
+
+.metricas-periodo-btn.active {
+  background: var(--clr-primary);
+  border-color: var(--clr-primary);
+  color: #000;
+  font-weight: 700;
+}
+
+/* ─── Panel de gráfico ─────────────────────────────────────────────────────── */
+
+.metricas-chart-panel {
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: 12px;
+  padding: 20px 20px 12px;
+  margin-bottom: 20px;
+}
+
+.metricas-chart-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.metricas-chart-title {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--clr-text);
+  margin: 0;
+}
+
+/* ─── Form de registro de peso ─────────────────────────────────────────────── */
+
+.metricas-peso-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.metricas-peso-form .input {
+  width: 90px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+}
+
+.metricas-peso-form .input-fecha {
+  width: 130px;
+}
+
+.metricas-peso-form .btn {
+  white-space: nowrap;
+}
+
+/* ─── Selector de ejercicio ────────────────────────────────────────────────── */
+
+.metricas-ej-selector {
+  position: relative;
+  min-width: 220px;
+}
+
+.metricas-ej-selector input {
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.metricas-ej-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 100;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+.metricas-ej-item {
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 8px 12px;
+  cursor: pointer;
+  color: var(--clr-text);
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  transition: background 0.1s;
+}
+
+.metricas-ej-item:hover {
+  background: rgba(255,255,255,0.05);
+}
+
+/* ─── Empty state ──────────────────────────────────────────────────────────── */
+
+.metricas-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  color: var(--clr-text-faint);
+  text-align: center;
+  gap: 8px;
+  min-height: 160px;
+}
+
+.metricas-empty-icon {
+  font-size: 2rem;
+  opacity: 0.4;
+}
+
+.metricas-empty p {
+  font-size: 0.88rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ─── Tooltip custom ───────────────────────────────────────────────────────── */
+
+.metricas-tooltip {
+  background: #111;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tooltip-fecha {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 0.5px;
+}
+
+.tooltip-valor {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--clr-primary);
+}
+
+/* ─── Scoreboard de métricas ───────────────────────────────────────────────── */
+
+.metricas-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 600px) {
+  .metricas-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+}

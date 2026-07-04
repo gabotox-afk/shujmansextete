@@ -21,3 +21,6 @@
 
 /* 8. Sección de entrenamientos: rutinas, calendario, sesiones */
 @import './styles/entrenamiento.css';
+
+/* 9. Página de métricas: gráficos de progreso, historial de peso */
+@import './styles/metricas.css';
