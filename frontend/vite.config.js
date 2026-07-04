@@ -1,11 +1,9 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// https://vite.dev/config/
-// base: '/~cuatro/' es NECESARIO para el servidor del colegio.
-// Sin esto, los assets (JS/CSS) no cargan porque Apache sirve
-// la app desde una subcarpeta, no desde la raíz.
-export default defineConfig({
+// En dev: base '/' → Vite maneja SPA fallback automáticamente (F5 funciona)
+// En build: base '/~cuatro/' → assets se sirven desde la subcarpeta del server del colegio
+export default defineConfig(({ command }) => ({
   plugins: [react()],
-  base: '/~cuatro/',
-})
+  base: command === 'build' ? '/~cuatro/' : '/',
+}))
