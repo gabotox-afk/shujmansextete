@@ -176,6 +176,8 @@ export const entrenamientoService = {
     if (rutinaDiaId) {
       await this._verificarDia(usuarioId, rutinaDiaId)
     }
+    const existente = await sesionRepository.findActivaHoy(usuarioId, rutinaDiaId)
+    if (existente) return existente
     return await sesionRepository.crear(usuarioId, { rutinaDiaId })
   },
 

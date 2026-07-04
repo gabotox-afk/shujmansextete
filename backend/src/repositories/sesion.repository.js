@@ -52,6 +52,23 @@ export const sesionRepository = {
     })
   },
 
+  async findActivaHoy(usuarioId, rutinaDiaId) {
+    const hoyInicio = new Date()
+    hoyInicio.setHours(0, 0, 0, 0)
+    const hoyFin = new Date()
+    hoyFin.setHours(23, 59, 59, 999)
+    return await prisma.sesion.findFirst({
+      where: {
+        usuarioId,
+        completada: false,
+        ...(rutinaDiaId ? { rutinaDiaId } : {}),
+        fecha: { gte: hoyInicio, lte: hoyFin },
+      },
+      include: { ...incluirSeries, ...incluirDia },
+      orderBy: { fecha: 'desc' },
+    })
+  },
+
   async actualizarSesion(id, datos) {
     return await prisma.sesion.update({ where: { id }, data: datos })
   },
