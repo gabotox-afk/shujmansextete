@@ -62,20 +62,26 @@ export const entrenamientoService = {
     const template = PLANTILLAS[templateKey]
     if (!template) throw new Error('Template no encontrado')
 
-    // Resuelve cada nombre de ejercicio a un id del catálogo
-    const diasResueltos = []
-    for (const dia of template.dias) {
-      const ejercicios = []
-      for (const nombreEj of dia.ejerciciosNombre) {
-        const resultados = await ejercicioRepository.buscar(null, nombreEj, '')
-        const ejercicio = resultados.find(e => e.nombre.toLowerCase() === nombreEj.toLowerCase())
-          || resultados[0]
-        if (ejercicio) {
-          ejercicios.push({ ejercicioId: ejercicio.id, seriesObj: 3, repsObj: '8-12', rirObj: 2 })
-        }
-      }
-      diasResueltos.push({ nombre: dia.nombre, ejercicios })
-    }
+    // Resuelve todos los ejercicios de todos los días en paralelo
+    const diasResueltos = await Promise.all(
+      template.dias.map(async (dia) => {
+        const ejercicios = (
+          await Promise.all(
+            dia.ejerciciosNombre.map(async (nombreEj) => {
+              const resultados = await ejercicioRepository.buscar(null, nombreEj, '')
+              const ejercicio =
+                resultados.find(e => e.nombre.toLowerCase() === nombreEj.toLowerCase()) ||
+                resultados[0]
+              return ejercicio
+                ? { ejercicioId: ejercicio.id, seriesObj: 3, repsObj: '8-12', rirObj: 2 }
+                : null
+            })
+          )
+        ).filter(Boolean)
+
+        return { nombre: dia.nombre, ejercicios }
+      })
+    )
 
     return await rutinaRepository.crearCompleta(usuarioId, {
       nombre: nombre || template.nombre,

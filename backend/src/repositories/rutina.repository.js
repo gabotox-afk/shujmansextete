@@ -36,31 +36,28 @@ export const rutinaRepository = {
   },
 
   async crearCompleta(usuarioId, { nombre, descripcion, dias }) {
-    return await prisma.$transaction(async (tx) => {
-      const rutina = await tx.rutina.create({
-        data: {
-          usuarioId,
-          nombre,
-          descripcion,
-          dias: {
-            create: dias.map((dia, i) => ({
-              nombre: dia.nombre,
-              orden: i + 1,
-              ejercicios: {
-                create: dia.ejercicios.map((ej, j) => ({
-                  ejercicioId: ej.ejercicioId,
-                  orden: j + 1,
-                  seriesObj: ej.seriesObj ?? 3,
-                  repsObj: ej.repsObj ?? '8-12',
-                  rirObj: ej.rirObj ?? 2,
-                })),
-              },
-            })),
-          },
+    return await prisma.rutina.create({
+      data: {
+        usuarioId,
+        nombre,
+        descripcion,
+        dias: {
+          create: dias.map((dia, i) => ({
+            nombre: dia.nombre,
+            orden: i + 1,
+            ejercicios: {
+              create: dia.ejercicios.map((ej, j) => ({
+                ejercicioId: ej.ejercicioId,
+                orden: j + 1,
+                seriesObj: ej.seriesObj ?? 3,
+                repsObj: ej.repsObj ?? '8-12',
+                rirObj: ej.rirObj ?? 2,
+              })),
+            },
+          })),
         },
-        include: incluirDiasCompletos,
-      })
-      return rutina
+      },
+      include: incluirDiasCompletos,
     })
   },
 
