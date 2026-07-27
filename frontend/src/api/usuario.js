@@ -2,7 +2,7 @@
  * @fileoverview Módulo de API para la gestión del perfil de usuario y onboarding.
  * Requiere autenticación mediante token JWT en el header Authorization.
  */
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1'
+import { API_URL } from './config.js'
 
 export const usuarioApi = {
   async completarOnboarding(datos) {
