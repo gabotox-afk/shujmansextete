@@ -1,0 +1,108 @@
+# .github/workflows/deploy.yml
+#
+# Deploy manual (boton "Run workflow" en la pestaña Actions de GitHub) al
+# servidor del colegio. No se dispara solo en cada push a proposito: el
+# servidor es compartido por varios alumnos y esta en vivo, asi que el
+# deploy se ejecuta cuando alguien lo decide explicitamente.
+#
+# Requiere estos secrets en Settings -> Secrets and variables -> Actions:
+#   SERVER_HOST     -> 200.3.127.46
+#   SERVER_USER     -> cuatro
+#   SERVER_PORT     -> 22002
+#   SERVER_SSH_KEY  -> clave privada SSH (par generado solo para este uso)
+
+name: Deploy a Produccion
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Compilar y desplegar
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Clonar el repo
+      - name: Checkout del codigo
+        uses: actions/checkout@v4
+
+      # 2. Node.js
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # 3. Instalar y compilar el frontend
+      - name: Instalar dependencias del frontend
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Compilar el frontend
+        run: |
+          cd frontend
+          npm run build
+
+      # 4. Subir el contenido de frontend/dist directo a ~/public_html
+      #    (strip_components:2 saca el prefijo "frontend/dist/" para que
+      #    los archivos queden sueltos, no en una subcarpeta)
+      - name: Subir frontend al servidor
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
+          source: "frontend/dist/*"
+          target: "~/public_html"
+          strip_components: 2
+
+      # 5. Subir el backend: server.js, package.json y la carpeta src/
+      #    (nunca node_modules - se instala en el servidor)
+      - name: Subir backend (server.js y package.json)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
+          source: "backend/server.js,backend/package.json"
+          target: "~/servicios"
+          strip_components: 1
+
+      - name: Subir backend (carpeta src)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
+          source: "backend/src/**/*"
+          target: "~/servicios/src"
+          strip_components: 2
+
+      # 6. En el servidor: arreglar permisos del frontend, instalar
+      #    dependencias del backend y reiniciar el proceso con pm2
+      - name: Instalar dependencias y reiniciar backend
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
+          script: |
+            chmod -R a+rX ~/public_html
+            cd ~/servicios
+            npm install
+            pm2 restart servicios
+            sleep 2
+            pm2 logs servicios --lines 15 --nostream
+
+      # 7. Verificacion final: pegarle al health check a traves del proxy
+      - name: Verificar que el backend responde
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://${{ secrets.SERVER_HOST }}:8002/~${{ secrets.SERVER_USER }}/api/health")
+          echo "Health check status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "El backend no respondio 200 despues del deploy"
+            exit 1
+          fi
