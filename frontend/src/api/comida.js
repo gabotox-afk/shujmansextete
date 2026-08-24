@@ -2,7 +2,7 @@
  * @fileoverview Módulo de API para gestión de alimentos y registros de comidas.
  * Todas las funciones requieren autenticación (token JWT en el header Authorization).
  */
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1'
+import { API_URL } from './config.js'
 
 const authHeaders = () => ({
   'Content-Type': 'application/json',
